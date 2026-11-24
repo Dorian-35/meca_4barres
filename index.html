@@ -5,137 +5,236 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TP Mécanique Générale - L3 SPI 2026-27</title>
 <style>
-  body{margin:0;background:#e9e9e9;color:#222;font-family:Arial,Helvetica,sans-serif;font-size:14px}
-  .page{max-width:1280px;margin:0 auto;background:#fff;border-left:1px solid #bbb;border-right:1px solid #bbb;min-height:100vh}
-  header{padding:18px 24px 14px;border-bottom:2px solid #333}
-  header h1{margin:0;font-size:22px;font-weight:bold}
-  header p{margin:4px 0 0;color:#555}
-  main{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;padding:20px 24px}
-  @media (max-width:900px){main{grid-template-columns:1fr}}
+  :root{
+    --blue:#005386; --blue2:#368ec4; --blue-l:#e5f1fa;
+    --top:#ffffff; --bar:#f4f5f6; --panel:#ffffff; --border:#d1d4d4; --txt:#3d3d3d; --muted:#77797c;
+    --head:#f1f1f1;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:var(--txt);background:#e2e4e3;display:flex;flex-direction:column;height:100vh}
 
-  fieldset{border:1px solid #aaa;margin:0 0 16px;padding:10px 12px 12px}
-  legend{font-weight:bold;padding:0 6px}
-  .param{margin:8px 0 12px}
-  .len .param{margin:8px 0}
-  .param label{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
-  .param input[type=number]{width:70px;padding:2px 4px;border:1px solid #999;font:inherit;text-align:right}
-  .param input[type=range]{width:100%;margin:0}
-  .sq{display:inline-block;width:10px;height:10px;border:1px solid #333;margin-right:6px;vertical-align:-1px}
-  .unit{color:#666;font-size:12px;margin-left:3px}
-  button{font:inherit;padding:4px 10px;border:1px solid #888;background:#f2f2f2;cursor:pointer;margin:2px 4px 2px 0}
-  button:hover{background:#e2e2e2}
-  .chk{display:block;margin:6px 0}
-  .msg{color:#b00;margin-top:6px;min-height:1em}
-  .linkbox{margin-top:10px;padding-top:8px;border-top:1px solid #ddd;font-size:13px}
-  .linkbox input{width:100%;box-sizing:border-box;margin:4px 0;padding:3px 4px;border:1px solid #999;font:12px monospace;background:#f7f7f7}
-  #copied{color:#1a6b1a;font-size:12px}
+  /* ---- Barre supérieure ---- */
+  .topbar{height:46px;background:var(--top);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:12px;flex:none}
+  .appbtn{width:34px;height:34px;border-radius:50%;background:var(--blue);display:grid;place-items:center;flex:none}
+  .appbtn svg{width:18px;height:18px}
+  .apptitle{display:flex;align-items:baseline;gap:8px;white-space:nowrap;overflow:hidden}
+  .apptitle b{font-size:15px;color:var(--blue)}
+  .apptitle span{color:var(--muted);font-size:13px}
+  .apptitle span::before{content:"|";margin-right:8px;color:#c2c4c4}
+  .topright{margin-left:auto;display:flex;align-items:center;gap:6px}
+  .tbtn{height:30px;padding:0 10px;border:1px solid transparent;border-radius:3px;background:none;color:var(--txt);cursor:pointer;font:inherit;display:flex;align-items:center;gap:6px}
+  .tbtn:hover{background:var(--blue-l);border-color:#b7d6ec}
+  .tbtn svg{width:16px;height:16px;fill:var(--blue)}
 
-  .figure{border:1px solid #aaa}
-  .figure-wrap{position:relative;width:100%;height:520px}
-  canvas{display:block;width:100%;height:100%}
-  .caption{border-top:1px solid #aaa;padding:6px 10px;font-size:13px;color:#444;background:#fafafa}
-  .caption span{margin-right:16px;white-space:nowrap}
-  .caption i{display:inline-block;width:18px;height:4px;vertical-align:middle;margin-right:5px}
+  /* ---- Onglets ---- */
+  .tabs{height:34px;background:var(--bar);border-bottom:1px solid var(--border);display:flex;align-items:flex-end;padding:0 12px;flex:none}
+  .tab{padding:0 16px;height:33px;line-height:33px;color:var(--muted);border-bottom:3px solid transparent}
+  .tab.active{color:var(--blue);border-bottom-color:var(--blue2);font-weight:bold;background:#fff;border-left:1px solid var(--border);border-right:1px solid var(--border)}
 
-  .tables{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:20px}
-  @media (max-width:1100px){.tables{grid-template-columns:1fr}}
-  h2{font-size:15px;margin:0 0 6px;border-bottom:1px solid #333;padding-bottom:3px}
-  table{width:100%;border-collapse:collapse}
-  td,th{border:1px solid #bbb;padding:4px 6px;text-align:left}
-  th{background:#f0f0f0;font-weight:bold}
-  td.v{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .ok{color:#1a6b1a;font-weight:bold} .no{color:#b00;font-weight:bold} .mid{color:#9a5a00;font-weight:bold}
-  .remark{font-size:13px;color:#444;margin:6px 0}
-  .warn{color:#b00}
-  footer{border-top:1px solid #bbb;padding:10px 24px;font-size:12px;color:#666;text-align:center}
+  /* ---- Espace de travail ---- */
+  .work{flex:1;display:grid;grid-template-columns:300px minmax(0,1fr) 300px}
+  .left,.right{background:var(--panel);overflow:auto}
+  .left{border-right:1px solid var(--border)}
+  .right{border-left:1px solid var(--border)}
+
+  .phead{height:30px;line-height:30px;padding:0 10px;background:var(--head);border-bottom:1px solid var(--border);font-weight:bold;color:var(--txt);display:flex;align-items:center;gap:6px}
+  .phead::before{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translate(-2px,-2px)}
+
+  /* Arbre de spécifications */
+  .tree{padding:8px 6px 12px}
+  .node{display:flex;align-items:center;gap:6px;padding:4px 4px;border-radius:2px}
+  .node.root{font-weight:bold;color:var(--blue)}
+  .node .ic{width:16px;height:16px;flex:none;border-radius:2px;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:bold}
+  .children{margin-left:11px;padding-left:12px;border-left:1px dotted #a9abab}
+  .leaf{display:grid;grid-template-columns:16px 1fr 62px 30px;white-space:nowrap;align-items:center;gap:6px;padding:3px 4px;border-radius:2px}
+  .leaf:hover,.node:hover{background:var(--blue-l)}
+  .leaf input[type=number]{width:100%;height:22px;border:1px solid #b4b6b6;border-radius:2px;padding:0 4px;text-align:right;font:inherit}
+  .leaf input:focus{outline:none;border-color:var(--blue2);box-shadow:0 0 0 2px rgba(54,142,196,.25)}
+  .unit{color:var(--muted);font-size:11px}
+  .sw{width:12px;height:12px;border-radius:2px;border:1px solid rgba(0,0,0,.25);margin-left:2px}
+  .slider{padding:2px 4px 6px 26px}
+  .slider input{width:100%;accent-color:var(--blue2)}
+  .linkbox{padding:6px 4px 4px 26px}
+  .linkbox input{width:100%;height:24px;border:1px solid #b4b6b6;border-radius:2px;padding:0 5px;font:11px monospace;background:#f7f8f8;color:#555}
+  .linkbox .row{display:flex;align-items:center;gap:8px;margin-top:5px}
+  .btn{height:26px;padding:0 12px;border:1px solid #b4b6b6;border-radius:3px;background:#fff;color:var(--txt);font:inherit;cursor:pointer}
+  .btn:hover{border-color:var(--blue2);background:var(--blue-l)}
+  .btn.primary{background:var(--blue2);border-color:var(--blue2);color:#fff}
+  .btn.primary:hover{background:var(--blue)}
+  #copied{color:#3b8a3b;font-size:11px}
+  .msg{color:#cc092f;padding:6px 10px;min-height:1em}
+
+  /* ---- Vue ---- */
+  .viewer{position:relative;min-width:0;min-height:300px;background:#fff}
+  .viewer canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .vlegend{position:absolute;right:10px;bottom:10px;background:rgba(255,255,255,.88);border:1px solid var(--border);border-radius:2px;padding:6px 9px;font-size:11px;line-height:1.7}
+  .vlegend i{display:inline-block;width:16px;height:4px;vertical-align:middle;margin-right:6px}
+  .vtitle{position:absolute;left:10px;top:8px;font-size:12px;color:var(--muted)}
+
+  /* ---- Panneau droit (widgets) ---- */
+  .widget{border-bottom:1px solid var(--border)}
+  .wbody{padding:8px 10px 10px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  td,th{padding:4px 5px;border-bottom:1px solid #e6e8e8;text-align:left}
+  th{background:#f7f8f8;font-weight:bold}
+  td.v,th.v{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ok{color:#3b8a3b} .no{color:#cc092f} .mid{color:#e87b00}
+  .warn{color:#cc092f}
+  .remark{font-size:11px;color:var(--muted);margin:6px 0 0;line-height:1.45}
+  .bigval{display:flex;align-items:baseline;justify-content:space-between;padding:8px 10px;margin-bottom:6px;background:var(--blue-l);border-left:3px solid var(--blue2)}
+  .bigval b{font-size:22px;color:var(--blue)}
+
+  /* ---- Barre d'actions ---- */
+  .actionbar{flex:none;background:var(--bar);border-top:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:0 0 6px}
+  .asects{display:flex;gap:2px}
+  .asect{padding:4px 14px;font-size:12px;color:var(--muted);border-top:3px solid transparent}
+  .asect.active{color:var(--blue);border-top-color:var(--blue2);font-weight:bold}
+  .acts{display:flex;align-items:stretch;gap:2px;background:#fff;border:1px solid var(--border);border-radius:3px;padding:3px}
+  .act{width:76px;padding:4px 2px 3px;border:1px solid transparent;border-radius:2px;background:none;cursor:pointer;font:inherit;font-size:11px;color:var(--txt);display:flex;flex-direction:column;align-items:center;gap:3px;user-select:none}
+  .act:hover{background:var(--blue-l);border-color:#b7d6ec}
+  .act svg{width:22px;height:22px}
+  .act input{display:none}
+  .act.on{background:var(--blue-l);border-color:var(--blue2)}
+  .sep{width:1px;background:var(--border);margin:2px 4px}
+
+  /* =========================================================
+     Intégration dans un widget (Web Page Reader / iframe)
+     ========================================================= */
+  html.embed, html.embed body{height:100%;overflow:hidden;background:#fff}
+  html.embed body{min-height:0}
+  html.embed .topbar, html.embed .tabs{display:none}
+  html.embed .work{min-height:0}
+  html.embed .viewer{min-height:0}
+  html.embed .phead{height:26px;line-height:26px}
+  html.embed .actionbar{padding:0 0 4px}
+  html.embed .asects{display:none}
+  html.embed .acts{margin-top:4px}
+  .work{min-height:0;overflow:hidden}
+  .left,.right{min-height:0}
+
+  /* Largeur moyenne : panneaux plus étroits */
+  @media (max-width:1250px){
+    .work{grid-template-columns:250px minmax(0,1fr) 250px}
+    .leaf{grid-template-columns:14px minmax(0,1fr) 50px 26px;gap:4px;font-size:12px}
+    .tree{padding:6px 4px 10px}
+    .children{margin-left:8px;padding-left:8px}
+    .slider,.linkbox{padding-left:18px}
+    .right td,.right th{padding:3px 4px}
+    .bigval b{font-size:18px}
+  }
+  /* Largeur réduite : on passe en défilement vertical, la vue en premier */
+  @media (max-width:900px){
+    html, html.embed{overflow:auto;height:auto}
+    body, html.embed body{overflow:visible;height:auto}
+    .work{display:flex;flex-direction:column;overflow:visible}
+    .viewer{order:1;height:380px;flex:none}
+    .left{order:2;border-right:0;border-top:1px solid var(--border)}
+    .right{order:3;border-left:0;border-top:1px solid var(--border)}
+    .left,.right{overflow:visible}
+    .actionbar{position:sticky;bottom:0;z-index:5}
+  }
+  @media (max-width:900px){ .vlegend{display:none} }
+  @media (max-width:520px){
+    .viewer{height:300px}
+    .vtitle{display:none}
+  }
+  /* Faible hauteur : barre d'actions compacte (icônes seules) */
+  @media (max-height:560px){
+    .act{width:44px;padding:3px 2px}
+    .act span{display:none}
+    .act svg{width:20px;height:20px}
+    .asects{display:none}
+  }
 </style>
+<script>
+  // Mode intégré : automatique dans une iframe (widget), forçable avec ?embed=1 ou ?embed=0
+  (function () {
+    var forced = null;
+    try { var e = new URLSearchParams(location.search).get("embed"); if (e === "1" || e === "0") forced = e === "1"; } catch (x) {}
+    var inFrame = true; try { inFrame = window.self !== window.top; } catch (x) {}
+    if (forced === null ? inFrame : forced) document.documentElement.classList.add("embed");
+  })();
+</script>
 </head>
 <body>
-<div class="page">
-<header>
-  <h1>TP Mécanique Générale - L3 SPI 2026-27</h1>
-  <p>Simulation d'un mécanisme plan à quatre barres (quadrilatère articulé O-A-B-C)</p>
-</header>
 
-<main>
-  <!-- ========== Paramètres ========== -->
-  <aside>
-    <fieldset class="len">
-      <legend>Longueurs des barres</legend>
-      <div class="param">
-        <label for="n_d"><span><span class="sq" style="background:#666"></span>L0 – Bâti OC</span>
-          <span><input type="number" id="n_d" min="1" max="1000" step="1"><span class="unit">mm</span></span></label>
-      </div>
-      <div class="param">
-        <label for="n_a"><span><span class="sq" style="background:#1f4e9c"></span>L1 – Manivelle OA</span>
-          <span><input type="number" id="n_a" min="1" max="1000" step="1"><span class="unit">mm</span></span></label>
-      </div>
-      <div class="param">
-        <label for="n_b"><span><span class="sq" style="background:#c0631a"></span>L2 – Bielle AB</span>
-          <span><input type="number" id="n_b" min="1" max="1000" step="1"><span class="unit">mm</span></span></label>
-      </div>
-      <div class="param">
-        <label for="n_c"><span><span class="sq" style="background:#2b7a2b"></span>L3 – Balancier BC</span>
-          <span><input type="number" id="n_c" min="1" max="1000" step="1"><span class="unit">mm</span></span></label>
-      </div>
-      <div class="linkbox">
-        <label for="link">Lien direct vers ce mécanisme :</label>
-        <input type="text" id="link" readonly>
-        <button id="copy">Copier le lien</button> <span id="copied"></span>
-      </div>
-    </fieldset>
+<!-- ===== Barre supérieure ===== -->
+<div class="topbar">
+  <div class="appbtn" title="Mécanisme 4 barres">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 18 L8 8 L17 6 L20 18"/><circle cx="4" cy="18" r="1.6" fill="#fff"/><circle cx="20" cy="18" r="1.6" fill="#fff"/>
+    </svg>
+  </div>
+  <div class="apptitle"><b>TP Mécanique Générale - L3 SPI 2026-27</b><span>Mécanisme 4 barres</span></div>
+  <div class="topright">
+    <button class="tbtn" id="share" title="Copier le lien vers ce mécanisme">
+      <svg viewBox="0 0 24 24"><path d="M18 16a3 3 0 0 0-2.4 1.2l-6.8-3.4a3 3 0 0 0 0-1.6l6.8-3.4A3 3 0 1 0 15 7l-6.8 3.4a3 3 0 1 0 0 3.2L15 17a3 3 0 1 0 3-1z"/></svg>
+      Partager
+    </button>
+  </div>
+</div>
 
-    <fieldset>
-      <legend>Mouvement</legend>
-      <div class="param">
-        <label for="n_w"><span>Vitesse ω₁ de la manivelle</span>
-          <span><input type="number" id="n_w" min="0.1" max="20" step="0.1"><span class="unit">rad/s</span></span></label>
-        <input type="range" id="r_w" min="0.1" max="8" step="0.1">
-      </div>
-      <div class="param">
-        <label for="n_th"><span>Angle θ₁ (réglage manuel)</span>
-          <span><input type="number" id="n_th" min="0" max="360" step="0.5"><span class="unit">°</span></span></label>
-        <input type="range" id="r_th" min="0" max="360" step="0.5">
-      </div>
-      <div>
-        <button id="play">Pause</button>
-        <button id="dir">Inverser le sens</button>
-        <button id="branch">Changer de montage</button>
-      </div>
-      <label class="chk"><input type="checkbox" id="showPath" checked> Tracer la trajectoire de B</label>
-      <button id="clearTrace">Effacer le tracé</button>
-      <label class="chk"><input type="checkbox" id="showExt" checked> Afficher les positions extrêmes</label>
-      <label class="chk"><input type="checkbox" id="showGrid" checked> Afficher la grille</label>
-      <div class="msg" id="msg"></div>
-    </fieldset>
-  </aside>
+<div class="tabs"><div class="tab active">Simulation cinématique</div></div>
 
-  <!-- ========== Figure et résultats ========== -->
-  <section style="min-width:0">
-    <div class="figure">
-      <div class="figure-wrap"><canvas id="cv"></canvas></div>
-      <div class="caption">
-        <span><i style="background:#666"></i>Bâti OC (L0)</span>
-        <span><i style="background:#1f4e9c"></i>Manivelle OA (L1)</span>
-        <span><i style="background:#c0631a"></i>Bielle AB (L2)</span>
-        <span><i style="background:#2b7a2b"></i>Balancier BC (L3)</span>
-        <span><i style="background:#7f97c7;height:2px"></i>Trajectoire de A</span>
-        <span><i style="background:#c62828;height:2px"></i>Trajectoire de B</span>
-        <span>Pointillés : positions extrêmes</span>
+<!-- ===== Espace de travail ===== -->
+<div class="work">
+  <!-- Arbre -->
+  <aside class="left">
+    <div class="phead">Arbre du mécanisme</div>
+    <div class="tree">
+      <div class="node root"><span class="ic" style="background:var(--blue)">M</span>Mécanisme 4 barres O-A-B-C</div>
+      <div class="children">
+        <div class="node"><span class="ic" style="background:#77797c">P</span>Paramètres géométriques</div>
+        <div class="children">
+          <label class="leaf" for="n_d"><span class="sw" style="background:#666"></span>L0 – Bâti OC<input type="number" id="n_d" min="1" max="1000" step="1"><span class="unit">mm</span></label>
+          <label class="leaf" for="n_a"><span class="sw" style="background:#1f4e9c"></span>L1 – Manivelle OA<input type="number" id="n_a" min="1" max="1000" step="1"><span class="unit">mm</span></label>
+          <label class="leaf" for="n_b"><span class="sw" style="background:#c0631a"></span>L2 – Bielle AB<input type="number" id="n_b" min="1" max="1000" step="1"><span class="unit">mm</span></label>
+          <label class="leaf" for="n_c"><span class="sw" style="background:#2b7a2b"></span>L3 – Balancier BC<input type="number" id="n_c" min="1" max="1000" step="1"><span class="unit">mm</span></label>
+        </div>
+        <div class="node"><span class="ic" style="background:#368ec4">C</span>Commande</div>
+        <div class="children">
+          <label class="leaf" for="n_w"><span></span>Vitesse ω₁<input type="number" id="n_w" min="0.1" max="20" step="0.1"><span class="unit">rad/s</span></label>
+          <div class="slider"><input type="range" id="r_w" min="0.1" max="8" step="0.1"></div>
+          <label class="leaf" for="n_th"><span></span>Angle θ₁<input type="number" id="n_th" min="0" max="360" step="0.5"><span class="unit">°</span></label>
+          <div class="slider"><input type="range" id="r_th" min="0" max="360" step="0.5"></div>
+        </div>
+        <div class="node"><span class="ic" style="background:#3b8a3b">L</span>Lien direct</div>
+        <div class="linkbox">
+          <input type="text" id="link" readonly>
+          <div class="row"><button class="btn primary" id="copy">Copier le lien</button><span id="copied"></span></div>
+        </div>
       </div>
     </div>
+    <div class="msg" id="msg"></div>
+  </aside>
 
-    <div class="tables">
-      <div>
-        <h2>Amplitude angulaire du balancier</h2>
-        <div id="extremes"></div>
-      </div>
-      <div>
-        <h2>Loi de Grashof</h2>
-        <div id="grashof"></div>
-      </div>
-      <div>
-        <h2>Résultats instantanés</h2>
+  <!-- Vue -->
+  <section class="viewer">
+    <canvas id="cv"></canvas>
+    <div class="vtitle">Vue de face – plan (O, x, y)</div>
+    <div class="vlegend">
+      <div><i style="background:#666"></i>Bâti OC (L0)</div>
+      <div><i style="background:#1f4e9c"></i>Manivelle OA (L1)</div>
+      <div><i style="background:#c0631a"></i>Bielle AB (L2)</div>
+      <div><i style="background:#2b7a2b"></i>Balancier BC (L3)</div>
+      <div><i style="background:#c62828;height:2px"></i>Trajectoire de B</div>
+    </div>
+  </section>
+
+  <!-- Widgets -->
+  <aside class="right">
+    <div class="widget">
+      <div class="phead">Amplitude angulaire du balancier</div>
+      <div class="wbody" id="extremes"></div>
+    </div>
+    <div class="widget">
+      <div class="phead">Loi de Grashof</div>
+      <div class="wbody" id="grashof"></div>
+    </div>
+    <div class="widget">
+      <div class="phead">Résultats instantanés</div>
+      <div class="wbody">
         <table>
           <tr><td>θ₁ (manivelle OA)</td><td class="v" id="o_t1">–</td></tr>
           <tr><td>θ₂ (bielle AB)</td><td class="v" id="o_t2">–</td></tr>
@@ -148,9 +247,46 @@
         </table>
       </div>
     </div>
-  </section>
-</main>
-<footer>TP Mécanique Générale – L3 SPI – Année universitaire 2026-27</footer>
+  </aside>
+</div>
+
+<!-- ===== Barre d'actions ===== -->
+<div class="actionbar">
+  <div class="asects"><div class="asect active">Animation et affichage</div></div>
+  <div class="acts">
+    <button class="act" id="play">
+      <svg viewBox="0 0 24 24" fill="#005386"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+      <span>Pause</span>
+    </button>
+    <button class="act" id="dir">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#005386" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v5h5"/></svg>
+      <span>Inverser sens</span>
+    </button>
+    <button class="act" id="branch">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#005386" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4"/></svg>
+      <span>Montage</span>
+    </button>
+    <button class="act" id="clearTrace">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#005386" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16l9-9 3 3-9 9H7z"/></svg>
+      <span>Effacer tracé</span>
+    </button>
+    <div class="sep"></div>
+    <label class="act on">
+      <input type="checkbox" id="showPath" checked>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#c62828" stroke-width="2" stroke-linecap="round"><path d="M4 18c4-10 12-12 16-6"/><circle cx="20" cy="12" r="2" fill="#c62828"/></svg>
+      <span>Trajectoire B</span>
+    </label>
+    <label class="act on">
+      <input type="checkbox" id="showExt" checked>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#2b7a2b" stroke-width="2" stroke-dasharray="3 2"><path d="M18 20L8 5M18 20L21 6"/><path d="M11 9a10 10 0 0 1 9-1" stroke-dasharray="none"/></svg>
+      <span>Extrêmes</span>
+    </label>
+    <label class="act on">
+      <input type="checkbox" id="showGrid" checked>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#77797c" stroke-width="1.5"><path d="M3 8h18M3 16h18M8 3v18M16 3v18"/><rect x="3" y="3" width="18" height="18"/></svg>
+      <span>Grille</span>
+    </label>
+  </div>
 </div>
 
 <script>
@@ -229,8 +365,13 @@
     else { t.select(); document.execCommand("copy"); done(); }
   });
   $("clearTrace").addEventListener("click", () => { trace = []; });
-  function pause() { playing = false; $("play").textContent = "Lecture"; }
-  function play()  { playing = true;  $("play").textContent = "Pause"; }
+  const SVG_PAUSE = '<svg viewBox="0 0 24 24" fill="#005386"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg><span>Pause</span>';
+  const SVG_PLAY = '<svg viewBox="0 0 24 24" fill="#005386"><path d="M7 5v14l12-7z"/></svg><span>Lecture</span>';
+  function pause() { playing = false; $("play").innerHTML = SVG_PLAY; }
+  function play()  { playing = true;  $("play").innerHTML = SVG_PAUSE; }
+  // Boutons d'affichage à bascule (style barre d'actions)
+  document.querySelectorAll(".act input[type=checkbox]").forEach(c => c.addEventListener("change", () => c.parentElement.classList.toggle("on", c.checked)));
+  $("share").addEventListener("click", () => $("copy").click());
 
   // ---------- Géométrie ----------
   function solve(t, br) {
@@ -343,7 +484,8 @@
     if (r.full) {
       h += `<tr><td colspan="2">Le balancier BC fait un tour complet : pas de position extrême.</td></tr>`;
     } else {
-      h += `<tr><th>Amplitude φ = θ₃max − θ₃min</th><th class="v ok">${(r.range * DEG).toFixed(2)}°</th></tr>
+      h = `<div class="bigval"><span>Amplitude φ = θ₃max − θ₃min</span><b>${(r.range * DEG).toFixed(2)}°</b></div><table>`;
+      h += `
             <tr><td>Position extrême 1 : θ₃</td><td class="v">${f(r.start.ang)}</td></tr>
             <tr><td>&nbsp;&nbsp;obtenue pour θ₁ =</td><td class="v">${f(r.start.t)}</td></tr>
             <tr><td>Position extrême 2 : θ₃</td><td class="v">${f(r.end.ang)}</td></tr>
@@ -406,9 +548,11 @@
 
   function draw(s) {
     const { w, h } = fit();
-    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+    const bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, "#ffffff"); bg.addColorStop(1, "#dfe6ee");
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
 
-    const pad = 80;
+    const pad = Math.max(28, Math.min(80, Math.min(w, h) * 0.12));
     const bw = bbox.xmax - bbox.xmin || 1, bh = bbox.ymax - bbox.ymin || 1;
     const sc = Math.min((w - 2 * pad) / bw, (h - 2 * pad) / bh);
     const ox = (w - bw * sc) / 2 - bbox.xmin * sc;
@@ -418,11 +562,11 @@
     // Grille
     if ($("showGrid").checked) {
       const st = niceStep(Math.max(bw, bh) / 8);
-      ctx.strokeStyle = "#e4e4e4"; ctx.lineWidth = 1; ctx.beginPath();
+      ctx.strokeStyle = "rgba(120,140,160,.18)"; ctx.lineWidth = 1; ctx.beginPath();
       for (let x = Math.floor(-ox / sc / st) * st; X(x) <= w; x += st) { ctx.moveTo(Math.round(X(x)) + .5, 0); ctx.lineTo(Math.round(X(x)) + .5, h); }
       for (let y = Math.floor((oy - h) / sc / st) * st; Y(y) >= 0; y += st) { ctx.moveTo(0, Math.round(Y(y)) + .5); ctx.lineTo(w, Math.round(Y(y)) + .5); }
       ctx.stroke();
-      text(w - 10, 12, "Grille : " + st + " mm", "#777", "12px " + FONT, "right");
+      text(w - 10, 16, "Grille : " + st + " mm", "#777", "12px " + FONT, "right");
     }
 
     // Trajectoires de A et de B

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TP Mécanique Générale - L3 SPI 2026-27</title>
+<style>
+  body{margin:0;background:#e9e9e9;color:#222;font-family:Arial,Helvetica,sans-serif;font-size:14px}
+  .page{max-width:1280px;margin:0 auto;background:#fff;border-left:1px solid #bbb;border-right:1px solid #bbb;min-height:100vh}
+  header{padding:18px 24px 14px;border-bottom:2px solid #333}
+  header h1{margin:0;font-size:22px;font-weight:bold}
+  header p{margin:4px 0 0;color:#555}
+  main{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;padding:20px 24px}
+  @media (max-width:900px){main{grid-template-columns:1fr}}
+
+  fieldset{border:1px solid #aaa;margin:0 0 16px;padding:10px 12px 12px}
+  legend{font-weight:bold;padding:0 6px}
+  .param{margin:8px 0 12px}
+  .len .param{margin:8px 0}
+  .param label{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+  .param input[type=number]{width:70px;padding:2px 4px;border:1px solid #999;font:inherit;text-align:right}
+  .param input[type=range]{width:100%;margin:0}
+  .sq{display:inline-block;width:10px;height:10px;border:1px solid #333;margin-right:6px;vertical-align:-1px}
+  .unit{color:#666;font-size:12px;margin-left:3px}
+  button{font:inherit;padding:4px 10px;border:1px solid #888;background:#f2f2f2;cursor:pointer;margin:2px 4px 2px 0}
+  button:hover{background:#e2e2e2}
+  .chk{display:block;margin:6px 0}
+  .msg{color:#b00;margin-top:6px;min-height:1em}
+  .linkbox{margin-top:10px;padding-top:8px;border-top:1px solid #ddd;font-size:13px}
+  .linkbox input{width:100%;box-sizing:border-box;margin:4px 0;padding:3px 4px;border:1px solid #999;font:12px monospace;background:#f7f7f7}
+  #copied{color:#1a6b1a;font-size:12px}
+
+  .figure{border:1px solid #aaa}
+  .figure-wrap{position:relative;width:100%;height:520px}
+  canvas{display:block;width:100%;height:100%}
+  .caption{border-top:1px solid #aaa;padding:6px 10px;font-size:13px;color:#444;background:#fafafa}
+  .caption span{margin-right:16px;white-space:nowrap}
+  .caption i{display:inline-block;width:18px;height:4px;vertical-align:middle;margin-right:5px}
+
+  .tables{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:20px}
+  @media (max-width:1100px){.tables{grid-template-columns:1fr}}
+  h2{font-size:15px;margin:0 0 6px;border-bottom:1px solid #333;padding-bottom:3px}
+  table{width:100%;border-collapse:collapse}
+  td,th{border:1px solid #bbb;padding:4px 6px;text-align:left}
+  th{background:#f0f0f0;font-weight:bold}
+  td.v{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ok{color:#1a6b1a;font-weight:bold} .no{color:#b00;font-weight:bold} .mid{color:#9a5a00;font-weight:bold}
+  .remark{font-size:13px;color:#444;margin:6px 0}
+  .warn{color:#b00}
+  footer{border-top:1px solid #bbb;padding:10px 24px;font-size:12px;color:#666;text-align:center}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <h1>TP Mécanique Générale - L3 SPI 2026-27</h1>
+  <p>Simulation d'un mécanisme plan à quatre barres (quadrilatère articulé O-A-B-C)</p>
+</header>
+
+<main>
+  <!-- ========== Paramètres ========== -->
+  <aside>
+    <fieldset class="len">
+      <legend>Longueurs des barres</legend>
+      <div class="param">
+        <label for="n_d"><span><span class="sq" style="background:#666"></span>L0 – Bâti OC</span>
+          <span><input type="number" id="n_d" min="1" max="1000" step="1"><span class="unit">mm</span></span></label>
+      </div>
+      <div class="param">
+        <label for="n_a"><span><span class="sq" style="background:#1f4e9c"></span>L1 – Manivelle OA</span>
+          <span><input type="number" id="n_a" min="1" max="1000" step="1"><span class="unit">mm</span></span></label>
+      </div>
+      <div class="param">
+        <label for="n_b"><span><span class="sq" style="background:#c0631a"></span>L2 – Bielle AB</span>
+          <span><input type="number" id="n_b" min="1" max="1000" step="1"><span class="unit">mm</span></span></label>
+      </div>
+      <div class="param">
+        <label for="n_c"><span><span class="sq" style="background:#2b7a2b"></span>L3 – Balancier BC</span>
+          <span><input type="number" id="n_c" min="1" max="1000" step="1"><span class="unit">mm</span></span></label>
+      </div>
+      <div class="linkbox">
+        <label for="link">Lien direct vers ce mécanisme :</label>
+        <input type="text" id="link" readonly>
+        <button id="copy">Copier le lien</button> <span id="copied"></span>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Mouvement</legend>
+      <div class="param">
+        <label for="n_w"><span>Vitesse ω₁ de la manivelle</span>
+          <span><input type="number" id="n_w" min="0.1" max="20" step="0.1"><span class="unit">rad/s</span></span></label>
+        <input type="range" id="r_w" min="0.1" max="8" step="0.1">
+      </div>
+      <div class="param">
+        <label for="n_th"><span>Angle θ₁ (réglage manuel)</span>
+          <span><input type="number" id="n_th" min="0" max="360" step="0.5"><span class="unit">°</span></span></label>
+        <input type="range" id="r_th" min="0" max="360" step="0.5">
+      </div>
+      <div>
+        <button id="play">Pause</button>
+        <button id="dir">Inverser le sens</button>
+        <button id="branch">Changer de montage</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="showPath" checked> Tracer la trajectoire de B</label>
+      <button id="clearTrace">Effacer le tracé</button>
+      <label class="chk"><input type="checkbox" id="showExt" checked> Afficher les positions extrêmes</label>
+      <label class="chk"><input type="checkbox" id="showGrid" checked> Afficher la grille</label>
+      <div class="msg" id="msg"></div>
+    </fieldset>
+  </aside>
+
+  <!-- ========== Figure et résultats ========== -->
+  <section style="min-width:0">
+    <div class="figure">
+      <div class="figure-wrap"><canvas id="cv"></canvas></div>
+      <div class="caption">
+        <span><i style="background:#666"></i>Bâti OC (L0)</span>
+        <span><i style="background:#1f4e9c"></i>Manivelle OA (L1)</span>
+        <span><i style="background:#c0631a"></i>Bielle AB (L2)</span>
+        <span><i style="background:#2b7a2b"></i>Balancier BC (L3)</span>
+        <span><i style="background:#7f97c7;height:2px"></i>Trajectoire de A</span>
+        <span><i style="background:#c62828;height:2px"></i>Trajectoire de B</span>
+        <span>Pointillés : positions extrêmes</span>
+      </div>
+    </div>
+
+    <div class="tables">
+      <div>
+        <h2>Amplitude angulaire du balancier</h2>
+        <div id="extremes"></div>
+      </div>
+      <div>
+        <h2>Loi de Grashof</h2>
+        <div id="grashof"></div>
+      </div>
+      <div>
+        <h2>Résultats instantanés</h2>
+        <table>
+          <tr><td>θ₁ (manivelle OA)</td><td class="v" id="o_t1">–</td></tr>
+          <tr><td>θ₂ (bielle AB)</td><td class="v" id="o_t2">–</td></tr>
+          <tr><td>θ₃ (balancier BC)</td><td class="v" id="o_t3">–</td></tr>
+          <tr><td>Angle de transmission μ</td><td class="v" id="o_mu">–</td></tr>
+          <tr><td>ω₂ (bielle)</td><td class="v" id="o_w2">–</td></tr>
+          <tr><td>ω₃ (balancier)</td><td class="v" id="o_w3">–</td></tr>
+          <tr><td>Rapport ω₃ / ω₁</td><td class="v" id="o_ratio">–</td></tr>
+          <tr><td>Montage</td><td class="v" id="o_br">–</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>TP Mécanique Générale – L3 SPI – Année universitaire 2026-27</footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const DEG = 180 / Math.PI, TWO = 2 * Math.PI;
+  const $ = id => document.getElementById(id);
+  const COL = { ground:"#666666", crank:"#1f4e9c", coupler:"#c0631a", rocker:"#2b7a2b", ink:"#222222" };
+
+  // d = L0 (OC), a = L1 (OA), b = L2 (AB), c = L3 (BC)
+  const P = { d: 100, a: 40, b: 110, c: 80, w: 1.5 };
+  let th = 0.6, dir = 1, branch = 1, playing = true;
+
+  // ---------- Paramètres passés dans l'URL ----------
+  // Exemple : page.html?L0=100&L1=40&L2=110&L3=80  (optionnels : w, theta, montage)
+  const URL_KEYS = { L0: "d", L1: "a", L2: "b", L3: "c", W: "w" };
+  function readUrl() {
+    let q;
+    try { q = new URLSearchParams(window.location.search); } catch (e) { return; }
+    for (const [name, val] of q) {
+      const key = URL_KEYS[name.toUpperCase()];
+      const v = parseFloat(String(val).replace(",", "."));
+      if (key && isFinite(v) && v > 0) P[key] = v;
+      if (name.toLowerCase() === "theta" && isFinite(v)) th = v / DEG;
+      if (name.toLowerCase() === "montage" && (v === 1 || v === 2)) branch = v === 1 ? 1 : -1;
+    }
+  }
+  function writeUrl() {
+    try {
+      const old = new URLSearchParams(window.location.search), q = new URLSearchParams();
+      for (const [k, v] of old) if (!["L0", "L1", "L2", "L3"].includes(k.toUpperCase())) q.append(k, v);
+      q.set("L0", P.d); q.set("L1", P.a); q.set("L2", P.b); q.set("L3", P.c);
+      history.replaceState(null, "", window.location.pathname + "?" + q.toString() + window.location.hash);
+    } catch (e) { /* page ouverte dans un contexte sans historique : on ignore */ }
+  }
+  function shareLink() {
+    const q = new URLSearchParams({ L0: P.d, L1: P.a, L2: P.b, L3: P.c });
+    return window.location.origin + window.location.pathname + "?" + q.toString();
+  }
+  readUrl();
+  let curves = null, bbox = null, ext = null, trace = [];
+
+  // ---------- Commandes ----------
+  function bind(key, onChange) {
+    const r = $("r_" + key), n = $("n_" + key);
+    n.value = P[key]; if (r) r.value = P[key];
+    const set = v => {
+      v = parseFloat(v); if (!isFinite(v) || v <= 0) { n.value = P[key]; return; }
+      P[key] = v; n.value = v; if (r) r.value = v; onChange();
+    };
+    if (r) r.addEventListener("input", e => set(e.target.value));
+    n.addEventListener("change", e => set(e.target.value));
+    n.addEventListener("keydown", e => { if (e.key === "Enter") set(n.value); });
+  }
+  ["d", "a", "b", "c"].forEach(k => bind(k, recompute));
+  bind("w", () => {});
+
+  const rTh = $("r_th"), nTh = $("n_th");
+  function setThetaManual(v) {
+    v = parseFloat(v); if (!isFinite(v)) return;
+    if (solve(v / DEG, branch)) { th = v / DEG; $("msg").textContent = ""; }
+    else $("msg").textContent = "θ₁ = " + v.toFixed(1) + "° : position non atteignable.";
+    syncTheta();
+  }
+  rTh.addEventListener("input", e => { pause(); setThetaManual(e.target.value); });
+  nTh.addEventListener("change", e => { pause(); setThetaManual(e.target.value); });
+  function syncTheta() { const d = norm(th).toFixed(1); rTh.value = d; nTh.value = d; }
+
+  $("play").addEventListener("click", () => playing ? pause() : play());
+  $("dir").addEventListener("click", () => { dir = -dir; });
+  $("branch").addEventListener("click", () => { if (solve(th, -branch)) { branch = -branch; recompute(); } });
+  $("link").addEventListener("focus", e => e.target.select());
+  $("copy").addEventListener("click", () => {
+    const t = $("link"), done = () => { $("copied").textContent = "Lien copié"; setTimeout(() => $("copied").textContent = "", 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(t.value).then(done, () => { t.select(); document.execCommand("copy"); done(); });
+    else { t.select(); document.execCommand("copy"); done(); }
+  });
+  $("clearTrace").addEventListener("click", () => { trace = []; });
+  function pause() { playing = false; $("play").textContent = "Lecture"; }
+  function play()  { playing = true;  $("play").textContent = "Pause"; }
+
+  // ---------- Géométrie ----------
+  function solve(t, br) {
+    const { d, a, b, c } = P;
+    const Ax = a * Math.cos(t), Ay = a * Math.sin(t);
+    const vx = d - Ax, vy = -Ay, D = Math.hypot(vx, vy);
+    if (D < 1e-9 || D > b + c + 1e-9 || D < Math.abs(b - c) - 1e-9) return null;
+    const m = (b * b - c * c + D * D) / (2 * D);
+    const h = Math.sqrt(Math.max(0, b * b - m * m));
+    const ux = vx / D, uy = vy / D;
+    const Bx = Ax + m * ux - br * h * uy, By = Ay + m * uy + br * h * ux;
+    const t2 = Math.atan2(By - Ay, Bx - Ax);
+    const t3 = Math.atan2(By, Bx - d);
+    const mu = Math.acos(Math.min(1, Math.max(-1, (b * b + c * c - D * D) / (2 * b * c))));
+    const s23 = Math.sin(t2 - t3);
+    let w2 = NaN, w3 = NaN;
+    if (Math.abs(s23) > 1e-9) { w2 = a * Math.sin(t3 - t) / (b * s23); w3 = a * Math.sin(t2 - t) / (c * s23); }
+    return { Ax, Ay, Bx, By, t2, t3, mu, w2, w3 };
+  }
+  const norm = a => ((a * DEG) % 360 + 360) % 360;
+
+  function grashof() {
+    const L = [
+      { n: "L0 (bâti OC)", v: P.d, k: "d" }, { n: "L1 (manivelle OA)", v: P.a, k: "a" },
+      { n: "L2 (bielle AB)", v: P.b, k: "b" }, { n: "L3 (balancier BC)", v: P.c, k: "c" }
+    ].sort((x, y) => x.v - y.v);
+    const s = L[0], l = L[3], sum1 = s.v + l.v, sum2 = L[1].v + L[2].v;
+    let cls, type, txt;
+    if (l.v >= L[0].v + L[1].v + L[2].v)
+      return { cls: "no", type: "Non assemblable", txt: "La plus grande barre dépasse la somme des trois autres.", s, l, sum1, sum2 };
+    if (Math.abs(sum1 - sum2) < 1e-9) {
+      cls = "mid"; type = "Cas limite (s + l = p + q)";
+      txt = "Mécanisme à point de changement : les barres peuvent s'aligner.";
+    } else if (sum1 < sum2) {
+      cls = "ok";
+      if (s.k === "d")      { type = "Double manivelle";    txt = "Le bâti est la barre la plus courte : OA et BC font des tours complets."; }
+      else if (s.k === "a") { type = "Manivelle-balancier"; txt = "La manivelle OA est la plus courte : elle fait des tours complets, le balancier BC oscille."; }
+      else if (s.k === "c") { type = "Balancier-manivelle"; txt = "BC est la plus courte : elle tourne complètement, OA oscille."; }
+      else                  { type = "Double balancier";    txt = "La bielle AB est la plus courte : OA et BC oscillent."; }
+      type = "Grashof : " + type;
+    } else {
+      cls = "no"; type = "Non-Grashof : triple balancier";
+      txt = "s + l > p + q : aucune barre ne fait de tour complet.";
+    }
+    return { cls, type, txt, s, l, sum1, sum2 };
+  }
+
+  function renderGrashof() {
+    const g = grashof();
+    const op = g.sum1 < g.sum2 ? "<" : g.sum1 > g.sum2 ? ">" : "=";
+    $("grashof").innerHTML =
+      `<table>
+        <tr><th colspan="2" class="${g.cls}">${g.type}</th></tr>
+        <tr><td>Plus courte s</td><td class="v">${g.s.n} = ${g.s.v}</td></tr>
+        <tr><td>Plus longue l</td><td class="v">${g.l.n} = ${g.l.v}</td></tr>
+        <tr><td>s + l</td><td class="v">${g.sum1.toFixed(1)}</td></tr>
+        <tr><td>p + q</td><td class="v">${g.sum2.toFixed(1)}</td></tr>
+        <tr><td>Condition</td><td class="v">s + l ${op} p + q</td></tr>
+       </table>
+       <p class="remark">${g.txt}</p>`;
+  }
+
+  function computeCurves() {
+    const N = 1440, res = { 1: [], "-1": [] };
+    for (const br of [1, -1]) for (let i = 0; i <= N; i++) {
+      const t = (i / N) * TWO; res[br].push({ t, s: solve(t, br) });
+    }
+    return res;
+  }
+
+  function computeBBox() {
+    let xmin = Math.min(0, P.d, -P.a), xmax = Math.max(0, P.d, P.a), ymin = -P.a, ymax = P.a;
+    for (const br of [1, -1]) for (const { s } of curves[br]) if (s) {
+      xmin = Math.min(xmin, s.Bx); xmax = Math.max(xmax, s.Bx);
+      ymin = Math.min(ymin, s.By); ymax = Math.max(ymax, s.By);
+    }
+    return { xmin, xmax, ymin, ymax };
+  }
+
+  // Plus petit arc contenant tous les angles (360° − plus grand écart)
+  function arcRange(items) {
+    if (items.length < 2) return null;
+    const arr = items.map(o => ({ ...o, n: ((o.ang % TWO) + TWO) % TWO })).sort((x, y) => x.n - y.n);
+    let maxGap = arr[0].n + TWO - arr[arr.length - 1].n, iStart = 0;
+    for (let i = 1; i < arr.length; i++) { const g = arr[i].n - arr[i - 1].n; if (g > maxGap) { maxGap = g; iStart = i; } }
+    if (maxGap < 3 / DEG) return { full: true };
+    return { full: false, range: TWO - maxGap, start: arr[iStart], end: arr[(iStart - 1 + arr.length) % arr.length] };
+  }
+
+  function computeExtremes() {
+    const cur = curves[branch], crankFull = cur.every(o => o.s);
+    const pts = (crankFull ? cur : curves[1].concat(curves[-1])).filter(o => o.s);
+    if (!pts.length) return null;
+    const rocker = arcRange(pts.map(o => ({ ang: o.s.t3, t: o.t, s: o.s })));
+    const crank = crankFull ? { full: true } : arcRange(pts.map(o => ({ ang: o.t, t: o.t, s: o.s })));
+    let ratio = null;
+    if (crankFull && rocker && !rocker.full) {
+      const dd = ((rocker.end.t - rocker.start.t) * DEG % 360 + 360) % 360;
+      ratio = { a: Math.max(dd, 360 - dd), b: Math.min(dd, 360 - dd) };
+    }
+    return { rocker, crank, ratio };
+  }
+
+  function renderExtremes() {
+    const el = $("extremes");
+    if (!ext) { el.innerHTML = '<p class="remark">Mécanisme non assemblable.</p>'; return; }
+    const f = v => norm(v).toFixed(1) + "°";
+    const r = ext.rocker, c = ext.crank;
+    let h = "<table>";
+    if (r.full) {
+      h += `<tr><td colspan="2">Le balancier BC fait un tour complet : pas de position extrême.</td></tr>`;
+    } else {
+      h += `<tr><th>Amplitude φ = θ₃max − θ₃min</th><th class="v ok">${(r.range * DEG).toFixed(2)}°</th></tr>
+            <tr><td>Position extrême 1 : θ₃</td><td class="v">${f(r.start.ang)}</td></tr>
+            <tr><td>&nbsp;&nbsp;obtenue pour θ₁ =</td><td class="v">${f(r.start.t)}</td></tr>
+            <tr><td>Position extrême 2 : θ₃</td><td class="v">${f(r.end.ang)}</td></tr>
+            <tr><td>&nbsp;&nbsp;obtenue pour θ₁ =</td><td class="v">${f(r.end.t)}</td></tr>`;
+    }
+    if (c && !c.full)
+      h += `<tr><td>Amplitude de la manivelle OA</td><td class="v">${(c.range * DEG).toFixed(2)}°</td></tr>`;
+    if (ext.ratio)
+      h += `<tr><td>Course aller / retour (θ₁)</td><td class="v">${ext.ratio.a.toFixed(1)}° / ${ext.ratio.b.toFixed(1)}°</td></tr>
+            <tr><td>Rapport de temps</td><td class="v">${(ext.ratio.a / ext.ratio.b).toFixed(3)}</td></tr>`;
+    el.innerHTML = h + "</table>";
+  }
+
+  function findValidStart() {
+    if (solve(th, branch)) return true;
+    for (const br of [branch, -branch]) for (let i = 0; i < 720; i++) {
+      const t = (i / 720) * TWO; if (solve(t, br)) { th = t; branch = br; return true; }
+    }
+    return false;
+  }
+
+  function recompute() {
+    trace = [];
+    writeUrl();
+    $("link").value = shareLink();
+    curves = computeCurves(); bbox = computeBBox();
+    renderGrashof();
+    ext = computeExtremes(); renderExtremes();
+    $("msg").textContent = findValidStart() ? "" : "Ces longueurs ne permettent aucune position : mécanisme non assemblable.";
+  }
+
+  // ---------- Animation ----------
+  function step(dt) {
+    const dth = dir * P.w * dt, next = th + dth;
+    if (solve(next, branch)) { th = next; return; }
+    let lo = 0, hi = 1;
+    for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (solve(th + dth * m, branch)) lo = m; else hi = m; }
+    th += dth * lo; dir = -dir; branch = -branch;
+    if (!solve(th, branch)) branch = -branch;
+  }
+
+  // ---------- Dessin ----------
+  const cv = $("cv"), ctx = cv.getContext("2d");
+  const FONT = "Arial, Helvetica, sans-serif";
+  function fit() {
+    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w, h };
+  }
+  function niceStep(v) {
+    const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p;
+    return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p;
+  }
+  function text(x, y, s, col, font, align) {
+    ctx.font = font || "13px " + FONT; ctx.fillStyle = col || COL.ink;
+    ctx.textAlign = align || "center"; ctx.textBaseline = "middle";
+    ctx.fillText(s, x, y);
+  }
+
+  function draw(s) {
+    const { w, h } = fit();
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+
+    const pad = 80;
+    const bw = bbox.xmax - bbox.xmin || 1, bh = bbox.ymax - bbox.ymin || 1;
+    const sc = Math.min((w - 2 * pad) / bw, (h - 2 * pad) / bh);
+    const ox = (w - bw * sc) / 2 - bbox.xmin * sc;
+    const oy = (h + bh * sc) / 2 + bbox.ymin * sc;
+    const X = x => ox + x * sc, Y = y => oy - y * sc;
+
+    // Grille
+    if ($("showGrid").checked) {
+      const st = niceStep(Math.max(bw, bh) / 8);
+      ctx.strokeStyle = "#e4e4e4"; ctx.lineWidth = 1; ctx.beginPath();
+      for (let x = Math.floor(-ox / sc / st) * st; X(x) <= w; x += st) { ctx.moveTo(Math.round(X(x)) + .5, 0); ctx.lineTo(Math.round(X(x)) + .5, h); }
+      for (let y = Math.floor((oy - h) / sc / st) * st; Y(y) >= 0; y += st) { ctx.moveTo(0, Math.round(Y(y)) + .5); ctx.lineTo(w, Math.round(Y(y)) + .5); }
+      ctx.stroke();
+      text(w - 10, 12, "Grille : " + st + " mm", "#777", "12px " + FONT, "right");
+    }
+
+    // Trajectoires de A et de B
+    if ($("showPath").checked && ext) {
+      ctx.lineWidth = 1.4;
+      const c = ext.crank, r = ext.rocker;
+      ctx.strokeStyle = "#7f97c7"; ctx.beginPath();
+      if (!c || c.full) ctx.arc(X(0), Y(0), P.a * sc, 0, TWO);
+      else ctx.arc(X(0), Y(0), P.a * sc, -c.start.ang, -(c.start.ang + c.range), true);
+      ctx.stroke();
+    }
+    // Trajectoire tracée par B
+    if ($("showPath").checked && trace.length > 1) {
+      ctx.strokeStyle = "#c62828"; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(X(trace[0][0]), Y(trace[0][1]));
+      for (let i = 1; i < trace.length; i++) ctx.lineTo(X(trace[i][0]), Y(trace[i][1]));
+      ctx.stroke(); ctx.lineCap = "butt";
+    }
+
+    // Bâti
+    ctx.strokeStyle = COL.ground; ctx.lineWidth = 1.5; ctx.setLineDash([10, 4, 2, 4]);
+    ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(P.d), Y(0)); ctx.stroke(); ctx.setLineDash([]);
+    text(X(P.d / 2), Y(0) + 14, "L0", COL.ground, "bold 12px " + FONT);
+
+    if ($("showExt").checked && ext && ext.rocker && !ext.rocker.full) drawExtremes(ext.rocker, X, Y, sc);
+
+    support(X(0), Y(0)); support(X(P.d), Y(0));
+    if (!s) { pin(X(0), Y(0)); pin(X(P.d), Y(0)); text(X(0) - 14, Y(0) - 14, "O", COL.ink, "bold 15px " + FONT); text(X(P.d) + 14, Y(0) - 14, "C", COL.ink, "bold 15px " + FONT); return; }
+
+    // Angle θ₁
+    const rT = Math.max(18, Math.min(30, P.a * sc * 0.45)), t1 = norm(th) / DEG;
+    ctx.strokeStyle = COL.crank; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(X(0), Y(0), rT, 0, -t1, true); ctx.stroke();
+    text(X(0) + (rT + 10) * Math.cos(-t1 / 2), Y(0) + (rT + 10) * Math.sin(-t1 / 2), "θ₁", COL.crank, "italic 13px " + FONT);
+
+    // Angle μ en B
+    {
+      const aBA = Math.atan2(s.Ay - s.By, s.Ax - s.Bx), aBC = Math.atan2(-s.By, P.d - s.Bx);
+      let d = aBC - aBA; while (d > Math.PI) d -= TWO; while (d < -Math.PI) d += TWO;
+      const rM = Math.max(14, Math.min(24, Math.min(P.b, P.c) * sc * 0.25));
+      ctx.strokeStyle = "#555"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(X(s.Bx), Y(s.By), rM, -aBA, -(aBA + d), d > 0); ctx.stroke();
+      const am = aBA + d / 2;
+      text(X(s.Bx) + (rM + 9) * Math.cos(-am), Y(s.By) + (rM + 9) * Math.sin(-am), "μ", "#555", "italic 13px " + FONT);
+    }
+
+    // Barres
+    bar(0, 0, s.Ax, s.Ay, COL.crank, X, Y);
+    bar(P.d, 0, s.Bx, s.By, COL.rocker, X, Y);
+    bar(s.Ax, s.Ay, s.Bx, s.By, COL.coupler, X, Y);
+    barLabel(0, 0, s.Ax, s.Ay, "L1", COL.crank, X, Y);
+    barLabel(s.Ax, s.Ay, s.Bx, s.By, "L2", COL.coupler, X, Y);
+    barLabel(P.d, 0, s.Bx, s.By, "L3", COL.rocker, X, Y);
+
+    // Articulations
+    pin(X(0), Y(0)); pin(X(P.d), Y(0)); pin(X(s.Ax), Y(s.Ay)); pin(X(s.Bx), Y(s.By));
+    pointName(X(0), Y(0), "O", -1, -1);
+    pointName(X(P.d), Y(0), "C", 1, -1);
+    pointName(X(s.Ax), Y(s.Ay), "A", s.Ax < P.d / 2 ? -1 : 1, s.Ay >= 0 ? -1 : 1);
+    pointName(X(s.Bx), Y(s.By), "B", s.Bx > P.d / 2 ? 1 : -1, s.By >= 0 ? -1 : 1);
+  }
+
+  function drawExtremes(r, X, Y, sc) {
+    ctx.setLineDash([5, 4]); ctx.lineWidth = 1.2; ctx.lineCap = "butt";
+    for (const e of [r.start, r.end]) {
+      const q = e.s;
+      ctx.strokeStyle = "#8a9cc0"; ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(q.Ax), Y(q.Ay)); ctx.stroke();
+      ctx.strokeStyle = "#d9a27a"; ctx.beginPath(); ctx.moveTo(X(q.Ax), Y(q.Ay)); ctx.lineTo(X(q.Bx), Y(q.By)); ctx.stroke();
+      ctx.strokeStyle = COL.rocker; ctx.beginPath(); ctx.moveTo(X(P.d), Y(0)); ctx.lineTo(X(q.Bx), Y(q.By)); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    for (const e of [r.start, r.end]) {
+      ctx.fillStyle = "#fff"; ctx.strokeStyle = COL.rocker; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(X(e.s.Bx), Y(e.s.By), 3, 0, TWO); ctx.fill(); ctx.stroke();
+    }
+    text(X(r.start.s.Bx) + 12, Y(r.start.s.By) - 10, "B₁", COL.rocker, "12px " + FONT);
+    text(X(r.end.s.Bx) + 12, Y(r.end.s.By) - 10, "B₂", COL.rocker, "12px " + FONT);
+
+    // Cote angulaire φ en C
+    const R = Math.max(30, Math.min(P.c * sc * 0.6, 75));
+    const a0 = -r.start.ang, a1 = -(r.start.ang + r.range);
+    ctx.strokeStyle = COL.rocker; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(X(P.d), Y(0), R, a0, a1, true); ctx.stroke();
+    for (const [a, sgn] of [[a0, 1], [a1, -1]]) {
+      const px = X(P.d) + R * Math.cos(a), py = Y(0) + R * Math.sin(a);
+      const tx = -Math.sin(a) * sgn, ty = Math.cos(a) * sgn;
+      ctx.fillStyle = COL.rocker; ctx.beginPath(); ctx.moveTo(px, py);
+      ctx.lineTo(px - tx * 8 + ty * 3, py - ty * 8 - tx * 3);
+      ctx.lineTo(px - tx * 8 - ty * 3, py - ty * 8 + tx * 3);
+      ctx.closePath(); ctx.fill();
+    }
+    const mid = r.start.ang + r.range / 2, Rl = Math.max(R + 28, P.c * sc + 26);
+    const lx = X(P.d) + Rl * Math.cos(-mid), ly = Y(0) + Rl * Math.sin(-mid);
+    const lab = "φ = " + (r.range * DEG).toFixed(1) + "°";
+    ctx.font = "bold 13px " + FONT;
+    const tw = ctx.measureText(lab).width;
+    ctx.fillStyle = "#fff"; ctx.fillRect(lx - tw / 2 - 4, ly - 9, tw + 8, 18);
+    text(lx, ly, lab, COL.rocker, "bold 13px " + FONT);
+  }
+
+  function bar(x1, y1, x2, y2, col, X, Y) {
+    ctx.lineCap = "round"; ctx.strokeStyle = col; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(X(x1), Y(y1)); ctx.lineTo(X(x2), Y(y2)); ctx.stroke();
+    ctx.lineCap = "butt";
+  }
+  function barLabel(x1, y1, x2, y2, s, col, X, Y) {
+    const mx = (X(x1) + X(x2)) / 2, my = (Y(y1) + Y(y2)) / 2;
+    let nx = -(Y(y2) - Y(y1)), ny = X(x2) - X(x1); const L = Math.hypot(nx, ny) || 1;
+    nx /= L; ny /= L; if (ny > 0) { nx = -nx; ny = -ny; }
+    text(mx + nx * 15, my + ny * 15, s, col, "bold 12px " + FONT);
+  }
+  function pin(x, y) {
+    ctx.fillStyle = "#fff"; ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(x, y, 5.5, 0, TWO); ctx.fill(); ctx.stroke();
+  }
+  function pointName(x, y, s, sx, sy) { text(x + sx * 14, y + sy * 14, s, COL.ink, "bold 15px " + FONT); }
+  function support(x, y) {
+    ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.2; ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 12, y + 18); ctx.lineTo(x + 12, y + 18); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 20, y + 18); ctx.lineTo(x + 20, y + 18); ctx.stroke();
+    ctx.lineWidth = 1;
+    for (let i = -20; i <= 14; i += 6) { ctx.beginPath(); ctx.moveTo(x + i, y + 25); ctx.lineTo(x + i + 6, y + 18); ctx.stroke(); }
+  }
+  function arrow(x1, y1, x2, y2, col) {
+    ctx.strokeStyle = col; ctx.fillStyle = col;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    const a = Math.atan2(y2 - y1, x2 - x1);
+    ctx.beginPath(); ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 7 * Math.cos(a - .4), y2 - 7 * Math.sin(a - .4));
+    ctx.lineTo(x2 - 7 * Math.cos(a + .4), y2 - 7 * Math.sin(a + .4));
+    ctx.closePath(); ctx.fill();
+  }
+
+  // ---------- Résultats ----------
+  function readout(s) {
+    const f = (v, n = 1) => isFinite(v) ? v.toFixed(n) : "—";
+    const ids = ["o_t1","o_t2","o_t3","o_mu","o_w2","o_w3","o_ratio"];
+    if (!s) { ids.forEach(id => $(id).textContent = "—"); return; }
+    const w1 = dir * P.w, mu = s.mu * DEG, bad = mu < 40 || mu > 140;
+    $("o_t1").textContent = f(norm(th)) + "°";
+    $("o_t2").textContent = f(norm(s.t2)) + "°";
+    $("o_t3").textContent = f(norm(s.t3)) + "°";
+    $("o_mu").textContent = f(mu) + "°" + (bad ? " (faible)" : "");
+    $("o_mu").className = "v" + (bad ? " warn" : "");
+    $("o_w2").textContent = f(s.w2 * w1, 3) + " rad/s";
+    $("o_w3").textContent = f(s.w3 * w1, 3) + " rad/s";
+    $("o_ratio").textContent = f(s.w3, 3);
+    $("o_br").textContent = branch === 1 ? "1" : "2";
+  }
+
+  // ---------- Boucle ----------
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (playing && solve(th, branch)) step(dt);
+    const s = solve(th, branch);
+    if (s) {
+      const lastP = trace[trace.length - 1];
+      if (!lastP || Math.hypot(s.Bx - lastP[0], s.By - lastP[1]) > 0.05) trace.push([s.Bx, s.By]);
+      if (trace.length > 20000) trace.shift();
+    }
+    draw(s); readout(s);
+    if (playing) syncTheta();
+    requestAnimationFrame(loop);
+  }
+
+  recompute(); syncTheta();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

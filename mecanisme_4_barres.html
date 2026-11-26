@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TP Mécanique Générale - L3 SPI 2026-27</title>
+<style>
+  :root{
+    --blue:#005386; --blue2:#368ec4; --blue-l:#e5f1fa;
+    --top:#ffffff; --bar:#f4f5f6; --panel:#ffffff; --border:#d1d4d4; --txt:#3d3d3d; --muted:#77797c;
+    --head:#f1f1f1;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:var(--txt);background:#e2e4e3;display:flex;flex-direction:column;height:100vh}
+
+  /* ---- Barre supérieure ---- */
+  .topbar{height:46px;background:var(--top);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:12px;flex:none}
+  .appbtn{width:34px;height:34px;border-radius:50%;background:var(--blue);display:grid;place-items:center;flex:none}
+  .appbtn svg{width:18px;height:18px}
+  .apptitle{display:flex;align-items:baseline;gap:8px;white-space:nowrap;overflow:hidden}
+  .apptitle b{font-size:15px;color:var(--blue)}
+  .apptitle span{color:var(--muted);font-size:13px}
+  .apptitle span::before{content:"|";margin-right:8px;color:#c2c4c4}
+  .topright{margin-left:auto;display:flex;align-items:center;gap:6px}
+  .tbtn{height:30px;padding:0 10px;border:1px solid transparent;border-radius:3px;background:none;color:var(--txt);cursor:pointer;font:inherit;display:flex;align-items:center;gap:6px}
+  .tbtn:hover{background:var(--blue-l);border-color:#b7d6ec}
+  .tbtn svg{width:16px;height:16px;fill:var(--blue)}
+
+  /* ---- Onglets ---- */
+  .tabs{height:34px;background:var(--bar);border-bottom:1px solid var(--border);display:flex;align-items:flex-end;padding:0 12px;flex:none}
+  .tab{padding:0 16px;height:33px;line-height:33px;color:var(--muted);border-bottom:3px solid transparent}
+  .tab.active{color:var(--blue);border-bottom-color:var(--blue2);font-weight:bold;background:#fff;border-left:1px solid var(--border);border-right:1px solid var(--border)}
+
+  /* ---- Espace de travail ---- */
+  .work{flex:1;display:grid;grid-template-columns:330px minmax(0,1fr) 300px}
+  .left,.right{background:var(--panel);overflow:auto}
+  .left{border-right:1px solid var(--border)}
+  .right{border-left:1px solid var(--border)}
+
+  .phead{height:30px;line-height:30px;padding:0 10px;background:var(--head);border-bottom:1px solid var(--border);font-weight:bold;color:var(--txt);display:flex;align-items:center;gap:6px}
+  .phead::before{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translate(-2px,-2px)}
+
+  /* Arbre de spécifications */
+  .tree{padding:8px 6px 12px}
+  .node{display:flex;align-items:center;gap:6px;padding:4px 4px;border-radius:2px}
+  .node.root{font-weight:bold;color:var(--blue)}
+  .node .ic{width:16px;height:16px;flex:none;border-radius:2px;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:bold}
+  .children{margin-left:11px;padding-left:12px;border-left:1px dotted #a9abab}
+  .leaf{display:grid;grid-template-columns:14px minmax(0,1fr) 66px 34px 22px;white-space:nowrap;align-items:center;gap:6px;padding:3px 4px;border-radius:2px}
+  .leaf:hover,.node:hover{background:var(--blue-l)}
+  .lt{overflow:hidden;text-overflow:ellipsis}
+  .lock{width:22px;height:22px;padding:0;border:1px solid transparent;border-radius:3px;background:none;cursor:pointer;display:grid;place-items:center}
+  .lock svg{width:14px;height:14px;fill:#8a8d90;stroke:#8a8d90}
+  .lock:hover{border-color:#b7d6ec;background:#fff}
+  .lock.free svg{fill:#e87b00;stroke:#e87b00}
+  .lock.free svg path{transform:translate(3px,-1px) rotate(18deg);transform-origin:11px 7px}
+  .leaf.free input[type=number]{background:#fff4e5;border-color:#e87b00}
+  .solvebox{padding:4px 4px 6px 26px}
+  .range{font-size:11px;line-height:1.4;padding:0 4px 5px 26px;margin-top:-2px;color:var(--muted)}
+  .range .st{display:block;font-weight:bold}
+  .range.okr .st{color:#3b8a3b} .range.nor .st{color:#b3485a}
+  .range.cur{background:#fff4e5;border-radius:2px;margin:0 4px 4px 22px;padding:3px 6px}
+  .solvebox .remark{margin-top:6px}
+  .solvebox .good{color:#3b8a3b;font-weight:bold}
+  .solvebox .bad{color:#cc092f;font-weight:bold}
+  .leaf input[type=number]{width:100%;height:22px;border:1px solid #b4b6b6;border-radius:2px;padding:0 4px;text-align:right;font:inherit}
+  .leaf input:focus{outline:none;border-color:var(--blue2);box-shadow:0 0 0 2px rgba(54,142,196,.25)}
+  .unit{color:var(--muted);font-size:11px}
+  .sw{width:12px;height:12px;border-radius:2px;border:1px solid rgba(0,0,0,.25);margin-left:2px}
+  .slider{padding:2px 4px 6px 26px}
+  .slider input{width:100%;accent-color:var(--blue2)}
+  .linkbox{padding:6px 4px 4px 26px}
+  .linkbox input{width:100%;height:24px;border:1px solid #b4b6b6;border-radius:2px;padding:0 5px;font:11px monospace;background:#f7f8f8;color:#555}
+  .linkbox .row{display:flex;align-items:center;gap:8px;margin-top:5px}
+  .btn{height:26px;padding:0 12px;border:1px solid #b4b6b6;border-radius:3px;background:#fff;color:var(--txt);font:inherit;cursor:pointer}
+  .btn:hover{border-color:var(--blue2);background:var(--blue-l)}
+  .btn.primary{background:var(--blue2);border-color:var(--blue2);color:#fff}
+  .btn.primary:hover{background:var(--blue)}
+  #copied{color:#3b8a3b;font-size:11px}
+  .msg{color:#cc092f;padding:6px 10px;min-height:1em}
+
+  /* ---- Vue ---- */
+  .viewer{position:relative;min-width:0;min-height:300px;background:#fff}
+  .viewer canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .vlegend{position:absolute;right:10px;bottom:10px;background:rgba(255,255,255,.88);border:1px solid var(--border);border-radius:2px;padding:6px 9px;font-size:11px;line-height:1.7}
+  .vlegend i{display:inline-block;width:16px;height:4px;vertical-align:middle;margin-right:6px}
+  .vtitle{position:absolute;left:10px;top:8px;font-size:12px;color:var(--muted)}
+  .alert{position:absolute;left:10px;top:30px;max-width:min(560px,calc(100% - 20px));background:#fdecee;border:1px solid #f3b6bf;border-left:4px solid #cc092f;
+    color:#8f0018;padding:7px 10px;font-size:12px;line-height:1.45;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .alert b{color:#cc092f}
+  .alert[hidden]{display:none}
+
+  /* ---- Panneau droit (widgets) ---- */
+  .widget{border-bottom:1px solid var(--border)}
+  .wbody{padding:8px 10px 10px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  td,th{padding:4px 5px;border-bottom:1px solid #e6e8e8;text-align:left}
+  th{background:#f7f8f8;font-weight:bold}
+  td.v,th.v{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ok{color:#3b8a3b} .no{color:#cc092f} .mid{color:#e87b00}
+  .warn{color:#cc092f}
+  .remark{font-size:11px;color:var(--muted);margin:6px 0 0;line-height:1.45}
+  .bigval{display:flex;align-items:baseline;justify-content:space-between;padding:8px 10px;margin-bottom:6px;background:var(--blue-l);border-left:3px solid var(--blue2)}
+  .bigval b{font-size:22px;color:var(--blue)}
+
+  /* ---- Barre d'actions ---- */
+  .actionbar{flex:none;background:var(--bar);border-top:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:0 0 6px}
+  .asects{display:flex;gap:2px}
+  .asect{padding:4px 14px;font-size:12px;color:var(--muted);border-top:3px solid transparent}
+  .asect.active{color:var(--blue);border-top-color:var(--blue2);font-weight:bold}
+  .acts{display:flex;align-items:stretch;gap:2px;background:#fff;border:1px solid var(--border);border-radius:3px;padding:3px}
+  .act{width:76px;padding:4px 2px 3px;border:1px solid transparent;border-radius:2px;background:none;cursor:pointer;font:inherit;font-size:11px;color:var(--txt);display:flex;flex-direction:column;align-items:center;gap:3px;user-select:none}
+  .act:hover{background:var(--blue-l);border-color:#b7d6ec}
+  .act svg{width:22px;height:22px}
+  .act input{display:none}
+  .act.on{background:var(--blue-l);border-color:var(--blue2)}
+  .sep{width:1px;background:var(--border);margin:2px 4px}
+
+  /* =========================================================
+     Intégration dans un widget (Web Page Reader / iframe)
+     ========================================================= */
+  html.embed, html.embed body{height:100%;overflow:hidden;background:#fff}
+  html.embed body{min-height:0}
+  html.embed .topbar, html.embed .tabs{display:none}
+  html.embed .work{min-height:0}
+  html.embed .viewer{min-height:0}
+  html.embed .phead{height:26px;line-height:26px}
+  html.embed .actionbar{padding:0 0 4px}
+  html.embed .asects{display:none}
+  html.embed .acts{margin-top:4px}
+  .work{min-height:0;overflow:hidden}
+  .left,.right{min-height:0}
+
+  /* Largeur moyenne : panneaux plus étroits */
+  @media (max-width:1250px){
+    .work{grid-template-columns:290px minmax(0,1fr) 250px}
+    .leaf{grid-template-columns:12px minmax(0,1fr) 58px 30px 20px;gap:3px;font-size:12px}
+    .tree{padding:6px 4px 10px}
+    .children{margin-left:8px;padding-left:8px}
+    .slider,.linkbox{padding-left:18px}
+    .right td,.right th{padding:3px 4px}
+    .bigval b{font-size:18px}
+  }
+  /* Largeur réduite : on passe en défilement vertical, la vue en premier */
+  @media (max-width:900px){
+    html, html.embed{overflow:auto;height:auto}
+    body, html.embed body{overflow:visible;height:auto}
+    .work{display:flex;flex-direction:column;overflow:visible}
+    .viewer{order:1;height:380px;flex:none}
+    .left{order:2;border-right:0;border-top:1px solid var(--border)}
+    .right{order:3;border-left:0;border-top:1px solid var(--border)}
+    .left,.right{overflow:visible}
+    .actionbar{position:sticky;bottom:0;z-index:5}
+  }
+  @media (max-width:900px){ .vlegend{display:none} }
+  @media (max-width:520px){
+    .viewer{height:300px}
+    .vtitle{display:none}
+  }
+  /* Faible hauteur : barre d'actions compacte (icônes seules) */
+  @media (max-height:560px){
+    .act{width:44px;padding:3px 2px}
+    .act span{display:none}
+    .act svg{width:20px;height:20px}
+    .asects{display:none}
+  }
+</style>
+<script>
+  // Mode intégré : automatique dans une iframe (widget), forçable avec ?embed=1 ou ?embed=0
+  (function () {
+    var forced = null;
+    try { var e = new URLSearchParams(location.search).get("embed"); if (e === "1" || e === "0") forced = e === "1"; } catch (x) {}
+    var inFrame = true; try { inFrame = window.self !== window.top; } catch (x) {}
+    if (forced === null ? inFrame : forced) document.documentElement.classList.add("embed");
+  })();
+</script>
+</head>
+<body>
+
+<!-- ===== Barre supérieure ===== -->
+<div class="topbar">
+  <div class="appbtn" title="Mécanisme 4 barres">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 18 L8 8 L17 6 L20 18"/><circle cx="4" cy="18" r="1.6" fill="#fff"/><circle cx="20" cy="18" r="1.6" fill="#fff"/>
+    </svg>
+  </div>
+  <div class="apptitle"><b>TP Mécanique Générale - L3 SPI 2026-27</b><span>Mécanisme 4 barres</span></div>
+  <div class="topright">
+    <button class="tbtn" id="share" title="Copier le lien vers ce mécanisme">
+      <svg viewBox="0 0 24 24"><path d="M18 16a3 3 0 0 0-2.4 1.2l-6.8-3.4a3 3 0 0 0 0-1.6l6.8-3.4A3 3 0 1 0 15 7l-6.8 3.4a3 3 0 1 0 0 3.2L15 17a3 3 0 1 0 3-1z"/></svg>
+      Partager
+    </button>
+  </div>
+</div>
+
+<div class="tabs"><div class="tab active">Simulation cinématique</div></div>
+
+<!-- ===== Espace de travail ===== -->
+<div class="work">
+  <!-- Arbre -->
+  <aside class="left">
+    <div class="phead">Arbre du mécanisme</div>
+    <div class="tree">
+      <div class="node root"><span class="ic" style="background:var(--blue)">M</span>Mécanisme 4 barres O-A-B-C</div>
+      <div class="children">
+        <div class="node"><span class="ic" style="background:#77797c">P</span>Paramètres géométriques</div>
+        <div class="children">
+          <label class="leaf" id="leaf_d" for="n_d"><span class="sw" style="background:#666"></span><span class="lt">L0 – Bâti OC</span><input type="number" id="n_d" min="1" max="1000" step="0.01"><span class="unit">mm</span><button type="button" class="lock" data-k="d"><svg viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.2"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke-width="1.6"/></svg></button></label>
+          <div class="range" id="rg_d"></div>
+          <label class="leaf" id="leaf_a" for="n_a"><span class="sw" style="background:#1f4e9c"></span><span class="lt">L1 – Manivelle OA</span><input type="number" id="n_a" min="1" max="1000" step="0.01"><span class="unit">mm</span><button type="button" class="lock" data-k="a"><svg viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.2"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke-width="1.6"/></svg></button></label>
+          <div class="range" id="rg_a"></div>
+          <label class="leaf" id="leaf_b" for="n_b"><span class="sw" style="background:#c0631a"></span><span class="lt">L2 – Bielle AB</span><input type="number" id="n_b" min="1" max="1000" step="0.01"><span class="unit">mm</span><button type="button" class="lock" data-k="b"><svg viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.2"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke-width="1.6"/></svg></button></label>
+          <div class="range" id="rg_b"></div>
+          <label class="leaf" id="leaf_c" for="n_c"><span class="sw" style="background:#2b7a2b"></span><span class="lt">L3 – Balancier BC</span><input type="number" id="n_c" min="1" max="1000" step="0.01"><span class="unit">mm</span><button type="button" class="lock" data-k="c"><svg viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.2"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke-width="1.6"/></svg></button></label>
+          <div class="range" id="rg_c"></div>
+        </div>
+        <div class="node"><span class="ic" style="background:#e87b00">φ</span>Course cible du balancier</div>
+        <div class="children">
+          <label class="leaf" for="n_target"><span></span><span class="lt">Course φ visée</span><input type="number" id="n_target" min="0.1" max="179.9" step="0.1"><span class="unit">°</span></label>
+          <div class="solvebox">
+            <button class="btn primary" id="solve">Atteindre la course</button>
+            <div class="remark" id="solveMsg">Cadenas fermé : longueur bloquée. Cadenas ouvert (orange) : longueur calculée.</div>
+          </div>
+        </div>
+        <div class="node"><span class="ic" style="background:#368ec4">C</span>Commande</div>
+        <div class="children">
+          <label class="leaf" for="n_w"><span></span><span class="lt">Vitesse ω₁</span><input type="number" id="n_w" min="0.1" max="20" step="0.1"><span class="unit">rad/s</span></label>
+          <div class="slider"><input type="range" id="r_w" min="0.1" max="8" step="0.1"></div>
+          <label class="leaf" for="n_th"><span></span><span class="lt">Angle θ₁</span><input type="number" id="n_th" min="0" max="360" step="0.5"><span class="unit">°</span></label>
+          <div class="slider"><input type="range" id="r_th" min="0" max="360" step="0.5"></div>
+        </div>
+        <div class="node"><span class="ic" style="background:#3b8a3b">L</span>Lien direct</div>
+        <div class="linkbox">
+          <input type="text" id="link" readonly>
+          <div class="row"><button class="btn primary" id="copy">Copier le lien</button><span id="copied"></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="msg" id="msg"></div>
+  </aside>
+
+  <!-- Vue -->
+  <section class="viewer">
+    <canvas id="cv"></canvas>
+    <div class="vtitle">Vue de face – plan (O, x, y)</div>
+    <div class="alert" id="alert" hidden></div>
+    <div class="vlegend">
+      <div><i style="background:#666"></i>Bâti OC (L0)</div>
+      <div><i style="background:#1f4e9c"></i>Manivelle OA (L1)</div>
+      <div><i style="background:#c0631a"></i>Bielle AB (L2)</div>
+      <div><i style="background:#2b7a2b"></i>Balancier BC (L3)</div>
+      <div><i style="background:#c62828;height:2px"></i>Trajectoire de B</div>
+    </div>
+  </section>
+
+  <!-- Widgets -->
+  <aside class="right">
+    <div class="widget">
+      <div class="phead">Amplitude angulaire du balancier</div>
+      <div class="wbody" id="extremes"></div>
+    </div>
+    <div class="widget">
+      <div class="phead">Loi de Grashof</div>
+      <div class="wbody" id="grashof"></div>
+    </div>
+    <div class="widget">
+      <div class="phead">Résultats instantanés</div>
+      <div class="wbody">
+        <table>
+          <tr><td>θ₁ (manivelle OA)</td><td class="v" id="o_t1">–</td></tr>
+          <tr><td>θ₂ (bielle AB)</td><td class="v" id="o_t2">–</td></tr>
+          <tr><td>θ₃ (balancier BC)</td><td class="v" id="o_t3">–</td></tr>
+          <tr><td>Angle de transmission μ</td><td class="v" id="o_mu">–</td></tr>
+          <tr><td>ω₂ (bielle)</td><td class="v" id="o_w2">–</td></tr>
+          <tr><td>ω₃ (balancier)</td><td class="v" id="o_w3">–</td></tr>
+          <tr><td>Rapport ω₃ / ω₁</td><td class="v" id="o_ratio">–</td></tr>
+          <tr><td>Montage</td><td class="v" id="o_br">–</td></tr>
+        </table>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- ===== Barre d'actions ===== -->
+<div class="actionbar">
+  <div class="asects"><div class="asect active">Animation et affichage</div></div>
+  <div class="acts">
+    <button class="act" id="play">
+      <svg viewBox="0 0 24 24" fill="#005386"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+      <span>Pause</span>
+    </button>
+    <button class="act" id="dir">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#005386" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v5h5"/></svg>
+      <span>Inverser sens</span>
+    </button>
+    <button class="act" id="branch">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#005386" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4"/></svg>
+      <span>Montage</span>
+    </button>
+    <button class="act" id="clearTrace">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#005386" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16l9-9 3 3-9 9H7z"/></svg>
+      <span>Effacer tracé</span>
+    </button>
+    <div class="sep"></div>
+    <label class="act on">
+      <input type="checkbox" id="showPath" checked>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#c62828" stroke-width="2" stroke-linecap="round"><path d="M4 18c4-10 12-12 16-6"/><circle cx="20" cy="12" r="2" fill="#c62828"/></svg>
+      <span>Trajectoire B</span>
+    </label>
+    <label class="act on">
+      <input type="checkbox" id="showExt" checked>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#2b7a2b" stroke-width="2" stroke-dasharray="3 2"><path d="M18 20L8 5M18 20L21 6"/><path d="M11 9a10 10 0 0 1 9-1" stroke-dasharray="none"/></svg>
+      <span>Extrêmes</span>
+    </label>
+    <label class="act on">
+      <input type="checkbox" id="showGrid" checked>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#77797c" stroke-width="1.5"><path d="M3 8h18M3 16h18M8 3v18M16 3v18"/><rect x="3" y="3" width="18" height="18"/></svg>
+      <span>Grille</span>
+    </label>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const DEG = 180 / Math.PI, TWO = 2 * Math.PI;
+  const $ = id => document.getElementById(id);
+  const COL = { ground:"#666666", crank:"#1f4e9c", coupler:"#c0631a", rocker:"#2b7a2b", ink:"#222222" };
+
+  // d = L0 (OC), a = L1 (OA), b = L2 (AB), c = L3 (BC)
+  const P = { d: 100, a: 40, b: 110, c: 80, w: 1.5 };
+  let freeKey = "a";          // longueur non bloquée (modifiée par le calcul de course)
+  let target = 60;            // course cible du balancier (°)
+  let th = 0.6, dir = 1, branch = 1, playing = true;
+
+  // ---------- Paramètres passés dans l'URL ----------
+  // Exemple : page.html?L0=100&L1=40&L2=110&L3=80  (optionnels : w, theta, montage)
+  const URL_KEYS = { L0: "d", L1: "a", L2: "b", L3: "c", W: "w" };
+  function readUrl() {
+    let q;
+    try { q = new URLSearchParams(window.location.search); } catch (e) { return; }
+    for (const [name, val] of q) {
+      const key = URL_KEYS[name.toUpperCase()];
+      const v = parseFloat(String(val).replace(",", "."));
+      if (key && isFinite(v) && v > 0) P[key] = v;
+      if (name.toLowerCase() === "theta" && isFinite(v)) th = v / DEG;
+      if (name.toLowerCase() === "course" && isFinite(v) && v > 0 && v < 180) target = v;
+      if (name.toLowerCase() === "libre" && URL_KEYS[String(val).toUpperCase()] && String(val).toUpperCase() !== "W") freeKey = URL_KEYS[String(val).toUpperCase()];
+      if (name.toLowerCase() === "montage" && (v === 1 || v === 2)) branch = v === 1 ? 1 : -1;
+    }
+  }
+  function writeUrl() {
+    try {
+      const old = new URLSearchParams(window.location.search), q = new URLSearchParams();
+      for (const [k, v] of old) if (!["L0", "L1", "L2", "L3", "COURSE", "LIBRE"].includes(k.toUpperCase())) q.append(k, v);
+      q.set("L0", P.d); q.set("L1", P.a); q.set("L2", P.b); q.set("L3", P.c);
+      q.set("course", target); q.set("libre", NAMES[freeKey]);
+      history.replaceState(null, "", window.location.pathname + "?" + q.toString() + window.location.hash);
+    } catch (e) { /* page ouverte dans un contexte sans historique : on ignore */ }
+  }
+  function shareLink() {
+    const q = new URLSearchParams({ L0: P.d, L1: P.a, L2: P.b, L3: P.c, course: target, libre: NAMES[freeKey] });
+    return window.location.origin + window.location.pathname + "?" + q.toString();
+  }
+  readUrl();
+  let curves = null, bbox = null, ext = null, trace = [];
+
+  // ---------- Commandes ----------
+  function bind(key, onChange) {
+    const r = $("r_" + key), n = $("n_" + key);
+    n.value = P[key]; if (r) r.value = P[key];
+    const set = v => {
+      v = parseFloat(v); if (!isFinite(v) || v <= 0) { n.value = P[key]; return; }
+      P[key] = v; n.value = v; if (r) r.value = v; onChange();
+    };
+    if (r) r.addEventListener("input", e => set(e.target.value));
+    n.addEventListener("change", e => set(e.target.value));
+    n.addEventListener("keydown", e => { if (e.key === "Enter") set(n.value); });
+  }
+  ["d", "a", "b", "c"].forEach(k => bind(k, recompute));
+  bind("w", () => {});
+
+  const rTh = $("r_th"), nTh = $("n_th");
+  function setThetaManual(v) {
+    v = parseFloat(v); if (!isFinite(v)) return;
+    if (solve(v / DEG, branch)) { th = v / DEG; $("msg").textContent = ""; }
+    else $("msg").textContent = "θ₁ = " + v.toFixed(1) + "° : position non atteignable.";
+    syncTheta();
+  }
+  rTh.addEventListener("input", e => { pause(); setThetaManual(e.target.value); });
+  nTh.addEventListener("change", e => { pause(); setThetaManual(e.target.value); });
+  function syncTheta() { const d = norm(th).toFixed(1); rTh.value = d; nTh.value = d; }
+
+  $("play").addEventListener("click", () => playing ? pause() : play());
+  $("dir").addEventListener("click", () => { dir = -dir; });
+  $("branch").addEventListener("click", () => { if (solve(th, -branch)) { branch = -branch; recompute(); } });
+  $("link").addEventListener("focus", e => e.target.select());
+  $("copy").addEventListener("click", () => {
+    const t = $("link"), done = () => { $("copied").textContent = "Lien copié"; setTimeout(() => $("copied").textContent = "", 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(t.value).then(done, () => { t.select(); document.execCommand("copy"); done(); });
+    else { t.select(); document.execCommand("copy"); done(); }
+  });
+  $("clearTrace").addEventListener("click", () => { trace = []; });
+  const SVG_PAUSE = '<svg viewBox="0 0 24 24" fill="#005386"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg><span>Pause</span>';
+  const SVG_PLAY = '<svg viewBox="0 0 24 24" fill="#005386"><path d="M7 5v14l12-7z"/></svg><span>Lecture</span>';
+  function pause() { playing = false; $("play").innerHTML = SVG_PLAY; }
+  function play()  { playing = true;  $("play").innerHTML = SVG_PAUSE; }
+  // Boutons d'affichage à bascule (style barre d'actions)
+  document.querySelectorAll(".act input[type=checkbox]").forEach(c => c.addEventListener("change", () => c.parentElement.classList.toggle("on", c.checked)));
+  $("share").addEventListener("click", () => $("copy").click());
+
+  // ---------- Géométrie ----------
+  function solve(t, br) {
+    const { d, a, b, c } = P;
+    const Ax = a * Math.cos(t), Ay = a * Math.sin(t);
+    const vx = d - Ax, vy = -Ay, D = Math.hypot(vx, vy);
+    if (D < 1e-9 || D > b + c + 1e-9 || D < Math.abs(b - c) - 1e-9) return null;
+    const m = (b * b - c * c + D * D) / (2 * D);
+    const h = Math.sqrt(Math.max(0, b * b - m * m));
+    const ux = vx / D, uy = vy / D;
+    const Bx = Ax + m * ux - br * h * uy, By = Ay + m * uy + br * h * ux;
+    const t2 = Math.atan2(By - Ay, Bx - Ax);
+    const t3 = Math.atan2(By, Bx - d);
+    const mu = Math.acos(Math.min(1, Math.max(-1, (b * b + c * c - D * D) / (2 * b * c))));
+    const s23 = Math.sin(t2 - t3);
+    let w2 = NaN, w3 = NaN;
+    if (Math.abs(s23) > 1e-9) { w2 = a * Math.sin(t3 - t) / (b * s23); w3 = a * Math.sin(t2 - t) / (c * s23); }
+    return { Ax, Ay, Bx, By, t2, t3, mu, w2, w3 };
+  }
+  const norm = a => ((a * DEG) % 360 + 360) % 360;
+
+  function grashof() {
+    const L = [
+      { n: "L0 (bâti OC)", v: P.d, k: "d" }, { n: "L1 (manivelle OA)", v: P.a, k: "a" },
+      { n: "L2 (bielle AB)", v: P.b, k: "b" }, { n: "L3 (balancier BC)", v: P.c, k: "c" }
+    ].sort((x, y) => x.v - y.v);
+    const s = L[0], l = L[3], sum1 = s.v + l.v, sum2 = L[1].v + L[2].v;
+    let cls, type, txt;
+    if (l.v >= L[0].v + L[1].v + L[2].v)
+      return { cls: "no", type: "Non assemblable", txt: "La plus grande barre dépasse la somme des trois autres.", s, l, sum1, sum2 };
+    if (Math.abs(sum1 - sum2) < 1e-9) {
+      cls = "mid"; type = "Cas limite (s + l = p + q)";
+      txt = "Mécanisme à point de changement : les barres peuvent s'aligner.";
+    } else if (sum1 < sum2) {
+      cls = "ok";
+      if (s.k === "d")      { type = "Double manivelle";    txt = "Le bâti est la barre la plus courte : OA et BC font des tours complets."; }
+      else if (s.k === "a") { type = "Manivelle-balancier"; txt = "La manivelle OA est la plus courte : elle fait des tours complets, le balancier BC oscille."; }
+      else if (s.k === "c") { type = "Balancier-manivelle"; txt = "BC est la plus courte : elle tourne complètement, OA oscille."; }
+      else                  { type = "Double balancier";    txt = "La bielle AB est la plus courte : OA et BC oscillent."; }
+      type = "Grashof : " + type;
+    } else {
+      cls = "no"; type = "Non-Grashof : triple balancier";
+      txt = "s + l > p + q : aucune barre ne fait de tour complet.";
+    }
+    return { cls, type, txt, s, l, sum1, sum2 };
+  }
+
+  function renderGrashof() {
+    const g = grashof();
+    const op = g.sum1 < g.sum2 ? "<" : g.sum1 > g.sum2 ? ">" : "=";
+    $("grashof").innerHTML =
+      `<table>
+        <tr><th colspan="2" class="${g.cls}">${g.type}</th></tr>
+        <tr><td>Plus courte s</td><td class="v">${g.s.n} = ${g.s.v}</td></tr>
+        <tr><td>Plus longue l</td><td class="v">${g.l.n} = ${g.l.v}</td></tr>
+        <tr><td>s + l</td><td class="v">${g.sum1.toFixed(1)}</td></tr>
+        <tr><td>p + q</td><td class="v">${g.sum2.toFixed(1)}</td></tr>
+        <tr><td>Condition</td><td class="v">s + l ${op} p + q</td></tr>
+       </table>
+       <p class="remark">${g.txt}</p>`;
+  }
+
+  function computeCurves() {
+    const N = 1440, res = { 1: [], "-1": [] };
+    for (const br of [1, -1]) for (let i = 0; i <= N; i++) {
+      const t = (i / N) * TWO; res[br].push({ t, s: solve(t, br) });
+    }
+    return res;
+  }
+
+  function computeBBox() {
+    let xmin = Math.min(0, P.d, -P.a), xmax = Math.max(0, P.d, P.a), ymin = -P.a, ymax = P.a;
+    for (const br of [1, -1]) for (const { s } of curves[br]) if (s) {
+      xmin = Math.min(xmin, s.Bx); xmax = Math.max(xmax, s.Bx);
+      ymin = Math.min(ymin, s.By); ymax = Math.max(ymax, s.By);
+    }
+    return { xmin, xmax, ymin, ymax };
+  }
+
+  // Plus petit arc contenant tous les angles (360° − plus grand écart)
+  function arcRange(items) {
+    if (items.length < 2) return null;
+    const arr = items.map(o => ({ ...o, n: ((o.ang % TWO) + TWO) % TWO })).sort((x, y) => x.n - y.n);
+    let maxGap = arr[0].n + TWO - arr[arr.length - 1].n, iStart = 0;
+    for (let i = 1; i < arr.length; i++) { const g = arr[i].n - arr[i - 1].n; if (g > maxGap) { maxGap = g; iStart = i; } }
+    if (maxGap < 3 / DEG) return { full: true };
+    return { full: false, range: TWO - maxGap, start: arr[iStart], end: arr[(iStart - 1 + arr.length) % arr.length] };
+  }
+
+  function computeExtremes() {
+    const cur = curves[branch], crankFull = cur.every(o => o.s);
+    const pts = (crankFull ? cur : curves[1].concat(curves[-1])).filter(o => o.s);
+    if (!pts.length) return null;
+    const rocker = arcRange(pts.map(o => ({ ang: o.s.t3, t: o.t, s: o.s })));
+    const crank = crankFull ? { full: true } : arcRange(pts.map(o => ({ ang: o.t, t: o.t, s: o.s })));
+    let ratio = null;
+    if (crankFull && rocker && !rocker.full) {
+      const dd = ((rocker.end.t - rocker.start.t) * DEG % 360 + 360) % 360;
+      ratio = { a: Math.max(dd, 360 - dd), b: Math.min(dd, 360 - dd) };
+    }
+    return { rocker, crank, ratio };
+  }
+
+  function renderExtremes() {
+    const el = $("extremes");
+    if (!ext) { el.innerHTML = '<p class="remark">Mécanisme non assemblable.</p>'; return; }
+    const f = v => norm(v).toFixed(1) + "°";
+    const r = ext.rocker, c = ext.crank;
+    let h = "<table>";
+    if (r.full) {
+      h += `<tr><td colspan="2">Le balancier BC fait un tour complet : pas de position extrême.</td></tr>`;
+    } else {
+      h = `<div class="bigval"><span>Amplitude φ = θ₃max − θ₃min</span><b>${(r.range * DEG).toFixed(2)}°</b></div><table>`;
+      h += `
+            <tr><td>Position extrême 1 : θ₃</td><td class="v">${f(r.start.ang)}</td></tr>
+            <tr><td>&nbsp;&nbsp;obtenue pour θ₁ =</td><td class="v">${f(r.start.t)}</td></tr>
+            <tr><td>Position extrême 2 : θ₃</td><td class="v">${f(r.end.ang)}</td></tr>
+            <tr><td>&nbsp;&nbsp;obtenue pour θ₁ =</td><td class="v">${f(r.end.t)}</td></tr>`;
+    }
+    if (!r.full) {
+      const e = r.range * DEG - target;
+      h += `<tr><td>Course cible</td><td class="v">${target.toFixed(2)}°</td></tr>
+            <tr><td>Écart à la cible</td><td class="v ${Math.abs(e) < 0.1 ? "ok" : "warn"}">${e >= 0 ? "+" : ""}${e.toFixed(2)}°</td></tr>`;
+    }
+    if (c && !c.full)
+      h += `<tr><td>Amplitude de la manivelle OA</td><td class="v">${(c.range * DEG).toFixed(2)}°</td></tr>`;
+    if (ext.ratio)
+      h += `<tr><td>Course aller / retour (θ₁)</td><td class="v">${ext.ratio.a.toFixed(1)}° / ${ext.ratio.b.toFixed(1)}°</td></tr>
+            <tr><td>Rapport de temps</td><td class="v">${(ext.ratio.a / ext.ratio.b).toFixed(3)}</td></tr>`;
+    el.innerHTML = h + "</table>";
+  }
+
+  // ---------- Course cible : calcul de la longueur libre ----------
+  const NAMES = { d: "L0", a: "L1", b: "L2", c: "L3" };
+
+
+  // Course φ (°) d'un manivelle-balancier fonctionnel (manivelle OA en rotation complète), sinon NaN.
+  // Positions extrêmes du balancier : manivelle et bielle alignées, AC = L2 − L1 et AC = L2 + L1.
+  function courseFunctional(p) {
+    const { d, a, b, c } = p, L = [d, a, b, c].sort((x, y) => x - y);
+    if (!(a <= L[0] + 1e-12 && L[0] + L[3] < L[1] + L[2])) return NaN;
+    const f = x => Math.min(1, Math.max(-1, (d * d + c * c - x * x) / (2 * d * c)));
+    return Math.abs(Math.acos(f(b - a)) - Math.acos(f(b + a))) * DEG;
+  }
+  function courseWith(key, x) { const p = { d: P.d, a: P.a, b: P.b, c: P.c }; p[key] = x; return courseFunctional(p); }
+
+  // Plage de courses atteignables quand seule la longueur "key" varie (configurations fonctionnelles)
+  function rangeFor(key) {
+    const others = ["d", "a", "b", "c"].filter(k => k !== key).reduce((s, k) => s + P[k], 0);
+    const n = 3000, xmax = others;
+    let lo = Infinity, hi = -Infinity, xlo = Infinity, xhi = -Infinity;
+    for (let i = 1; i < n; i++) {
+      const x = xmax * i / n, v = courseWith(key, x);
+      if (!isFinite(v)) continue;
+      lo = Math.min(lo, v); hi = Math.max(hi, v); xlo = Math.min(xlo, x); xhi = Math.max(xhi, x);
+    }
+    return isFinite(lo) ? { lo, hi, xlo, xhi } : null;
+  }
+
+  let ranges = {};
+  function updateRanges() {
+    for (const k of ["d", "a", "b", "c"]) ranges[k] = rangeFor(k);
+    renderRanges();
+  }
+  function renderRanges() {
+    for (const k of ["d", "a", "b", "c"]) {
+      const el = $("rg_" + k), r = ranges[k];
+      const fr = v => v.toFixed(1).replace(".", ",") + "°", n = NAMES[k], tg = fr(target);
+      const cur = k === freeKey ? " cur" : "";
+      if (!r) {
+        el.className = "range nor" + cur;
+        el.innerHTML = `En modifiant ${n} seule : aucune configuration où la manivelle tourne.<span class="st">✗ Course ${tg} non atteignable</span>`;
+        continue;
+      }
+      const ok = target > r.lo && target < r.hi;
+      el.className = "range " + (ok ? "okr" : "nor") + cur;
+      el.innerHTML = `En modifiant ${n} seule, la course peut aller de ${fr(r.lo)} à ${fr(r.hi)}.` +
+        `<span class="st">${ok ? "✓ Course visée " + tg + " atteignable" : "✗ Course visée " + tg + " hors de cette plage"}</span>`;
+      el.title = NAMES[k] + " entre " + r.xlo.toFixed(1) + " et " + r.xhi.toFixed(1) + " mm (manivelle en rotation complète)";
+    }
+  }
+
+  function solveTarget() {
+    const key = freeKey, name = NAMES[key], msg = $("solveMsg");
+    const fr = v => v.toFixed(1).replace(".", ",") + "°", mm = (v, dec = 2) => v.toFixed(dec).replace(".", ",") + " mm";
+    const r = ranges[key];
+    const can = ["a", "c", "d", "b"].filter(k => k !== key && ranges[k] && target > ranges[k].lo && target < ranges[k].hi).map(k => NAMES[k]);
+    if (!r) {
+      msg.innerHTML = `<span class="bad">Avec ${name} libre, aucune configuration ne permet à la manivelle de tourner.</span>` +
+        (can.length ? ` Débloquez plutôt : <b>${can.join(", ")}</b>.` : "");
+      return;
+    }
+    // Course visée hors de la plage : on vise la course possible la plus proche (avec une petite marge
+    // pour ne pas tomber exactement sur une configuration limite)
+    let tg = target, closest = false;
+    const m = Math.min(0.5, (r.hi - r.lo) / 10);
+    if (tg <= r.lo + m) { tg = r.lo + m; closest = true; }
+    else if (tg >= r.hi - m) { tg = r.hi - m; closest = true; }
+
+    const others = ["d", "a", "b", "c"].filter(k => k !== key).reduce((s, k) => s + P[k], 0);
+    const n = 3000, xs = [], fs = [];
+    for (let i = 1; i < n; i++) { const x = others * i / n; xs.push(x); fs.push(courseWith(key, x) - tg); }
+    const sols = [];
+    for (let i = 0; i < xs.length - 1; i++) {
+      const f0 = fs[i], f1 = fs[i + 1];
+      if (!isFinite(f0) || !isFinite(f1) || f0 * f1 > 0) continue;
+      let lo = xs[i], hi = xs[i + 1], flo = f0;
+      for (let k = 0; k < 50; k++) {
+        const mid = (lo + hi) / 2, fm = courseWith(key, mid) - tg;
+        if (flo * fm <= 0) hi = mid; else { lo = mid; flo = fm; }
+      }
+      // arrondi au 1/100 mm, ou plus fin si la course varie très vite près d'une limite
+      const xm = (lo + hi) / 2;
+      for (const dec of [2, 3, 4]) {
+        const k = Math.pow(10, dec), x = Math.round(xm * k) / k, v = courseWith(key, x);
+        if (isFinite(v) && Math.abs(v - tg) < 0.05) { sols.push({ x, v, dec }); break; }
+      }
+    }
+    if (!sols.length) {
+      msg.innerHTML = `<span class="bad">Aucune solution trouvée avec ${name} libre.</span>` +
+        (can.length ? ` Débloquez plutôt : <b>${can.join(", ")}</b>.` : "");
+      return;
+    }
+    sols.sort((p, q) => Math.abs(p.x - P[key]) - Math.abs(q.x - P[key]));
+    const sol = sols[0];
+    P[key] = sol.x; $("n_" + key).value = sol.x;
+    pause(); recompute();
+    let h;
+    if (closest) {
+      h = `<span class="bad">Course visée ${fr(target)} impossible avec ${name} libre.</span> ` +
+          `Course la plus proche atteinte : <span class="good">φ = ${fr(sol.v)}</span> avec <b>${name} = ${mm(sol.x, sol.dec)}</b>.` +
+          (can.length ? ` Pour obtenir exactement ${fr(target)}, débloquez plutôt <b>${can.join(" ou ")}</b>.`
+                      : ` Aucune longueur seule ne permet d'obtenir ${fr(target)} : modifiez d'abord une autre longueur à la main.`);
+    } else {
+      h = `<span class="good">${name} = ${mm(sol.x, sol.dec)}</span> → course obtenue φ = ${fr(sol.v)} (manivelle-balancier).`;
+      if (sols.length > 1) h += ` Autre solution : ${sols.slice(1).map(o => name + " = " + mm(o.x, o.dec)).join(", ")}.`;
+    }
+    msg.innerHTML = h;
+    play();
+  }
+
+  function renderLocks() {
+    document.querySelectorAll(".lock").forEach(b => {
+      const k = b.dataset.k, free = k === freeKey;
+      b.classList.toggle("free", free);
+      $("leaf_" + k).classList.toggle("free", free);
+      b.title = free ? NAMES[k] + " est la longueur libre : elle sera calculée pour atteindre la course cible"
+                     : NAMES[k] + " est bloquée. Cliquer pour la rendre libre (la longueur libre actuelle sera bloquée)";
+    });
+  }
+  document.querySelectorAll(".lock").forEach(b => b.addEventListener("click", e => {
+    e.preventDefault(); freeKey = b.dataset.k; renderLocks();
+    writeUrl(); $("link").value = shareLink();
+    renderRanges();
+    const r = ranges[freeKey];
+    $("solveMsg").innerHTML = "Longueur libre : " + NAMES[freeKey] + (r ? " (φ possible de " + r.lo.toFixed(1) + "° à " + r.hi.toFixed(1) + "°)" : "") + ". Cliquez sur « Atteindre la course ».";
+  }));
+  {
+    const nt = $("n_target"); nt.value = target;
+    const setT = () => { const v = parseFloat(String(nt.value).replace(",", ".")); if (isFinite(v) && v > 0 && v < 180) { target = v; renderExtremes(); renderRanges(); writeUrl(); $("link").value = shareLink(); } else nt.value = target; };
+    nt.addEventListener("change", setT);
+    nt.addEventListener("keydown", e => { if (e.key === "Enter") { setT(); solveTarget(); } });
+    $("solve").addEventListener("click", () => { setT(); solveTarget(); });
+  }
+
+  // ---------- Configuration non fonctionnelle : la manivelle ne fait pas un tour complet ----------
+  function crankBlocked() { return !!(ext && ext.crank && !ext.crank.full); }
+  function renderAlert() {
+    const el = $("alert");
+    if (!crankBlocked()) { el.hidden = true; return; }
+    const c = ext.crank, a0 = norm(c.start.ang), a1 = norm(c.start.ang + c.range);
+    el.innerHTML = `<b>⚠ Configuration non fonctionnelle : la manivelle OA ne fait pas un tour complet.</b><br>
+      θ₁ est limité entre ${a0.toFixed(1)}° et ${a1.toFixed(1)}° (amplitude ${(c.range * DEG).toFixed(1)}°).
+      Entraînée par un moteur en rotation continue, la manivelle se bloquerait aux points morts.
+      L'animation montre seulement l'aller-retour possible. (${grashof().type})`;
+    el.hidden = false;
+  }
+
+  function findValidStart() {
+    if (solve(th, branch)) return true;
+    for (const br of [branch, -branch]) for (let i = 0; i < 720; i++) {
+      const t = (i / 720) * TWO; if (solve(t, br)) { th = t; branch = br; return true; }
+    }
+    return false;
+  }
+
+  function recompute() {
+    trace = [];
+    writeUrl();
+    $("link").value = shareLink();
+    curves = computeCurves(); bbox = computeBBox();
+    renderGrashof();
+    ext = computeExtremes(); renderExtremes();
+    renderAlert();
+    updateRanges();
+    $("msg").textContent = findValidStart() ? "" : "Ces longueurs ne permettent aucune position : mécanisme non assemblable.";
+  }
+
+  // ---------- Animation ----------
+  function step(dt) {
+    const dth = dir * P.w * dt, next = th + dth;
+    if (solve(next, branch)) { th = next; return; }
+    let lo = 0, hi = 1;
+    for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (solve(th + dth * m, branch)) lo = m; else hi = m; }
+    th += dth * lo; dir = -dir; branch = -branch;
+    if (!solve(th, branch)) branch = -branch;
+  }
+
+  // ---------- Dessin ----------
+  const cv = $("cv"), ctx = cv.getContext("2d");
+  const FONT = "Arial, Helvetica, sans-serif";
+  function fit() {
+    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w, h };
+  }
+  function niceStep(v) {
+    const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p;
+    return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p;
+  }
+  function text(x, y, s, col, font, align) {
+    ctx.font = font || "13px " + FONT; ctx.fillStyle = col || COL.ink;
+    ctx.textAlign = align || "center"; ctx.textBaseline = "middle";
+    ctx.fillText(s, x, y);
+  }
+
+  function draw(s) {
+    const { w, h } = fit();
+    const bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, "#ffffff"); bg.addColorStop(1, "#dfe6ee");
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+    const pad = Math.max(28, Math.min(80, Math.min(w, h) * 0.12));
+    const bw = bbox.xmax - bbox.xmin || 1, bh = bbox.ymax - bbox.ymin || 1;
+    const sc = Math.min((w - 2 * pad) / bw, (h - 2 * pad) / bh);
+    const ox = (w - bw * sc) / 2 - bbox.xmin * sc;
+    const oy = (h + bh * sc) / 2 + bbox.ymin * sc;
+    const X = x => ox + x * sc, Y = y => oy - y * sc;
+
+    // Grille
+    if ($("showGrid").checked) {
+      const st = niceStep(Math.max(bw, bh) / 8);
+      ctx.strokeStyle = "rgba(120,140,160,.18)"; ctx.lineWidth = 1; ctx.beginPath();
+      for (let x = Math.floor(-ox / sc / st) * st; X(x) <= w; x += st) { ctx.moveTo(Math.round(X(x)) + .5, 0); ctx.lineTo(Math.round(X(x)) + .5, h); }
+      for (let y = Math.floor((oy - h) / sc / st) * st; Y(y) >= 0; y += st) { ctx.moveTo(0, Math.round(Y(y)) + .5); ctx.lineTo(w, Math.round(Y(y)) + .5); }
+      ctx.stroke();
+      text(w - 10, 16, "Grille : " + st + " mm", "#777", "12px " + FONT, "right");
+    }
+
+    // Trajectoires de A et de B
+    if ($("showPath").checked && ext) {
+      ctx.lineWidth = 1.4;
+      const c = ext.crank, r = ext.rocker;
+      if (!c || c.full) {
+        ctx.strokeStyle = "#7f97c7"; ctx.beginPath(); ctx.arc(X(0), Y(0), P.a * sc, 0, TWO); ctx.stroke();
+      } else {
+        // secteur interdit en pointillés, secteur accessible en rouge
+        ctx.strokeStyle = "rgba(204,9,47,.35)"; ctx.setLineDash([4, 4]); ctx.beginPath();
+        ctx.arc(X(0), Y(0), P.a * sc, -(c.start.ang + c.range), -c.start.ang - TWO, true); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = "#cc092f"; ctx.lineWidth = 2; ctx.beginPath();
+        ctx.arc(X(0), Y(0), P.a * sc, -c.start.ang, -(c.start.ang + c.range), true); ctx.stroke();
+      }
+    }
+    // Trajectoire tracée par B
+    if ($("showPath").checked && trace.length > 1) {
+      ctx.strokeStyle = "#c62828"; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(X(trace[0][0]), Y(trace[0][1]));
+      for (let i = 1; i < trace.length; i++) ctx.lineTo(X(trace[i][0]), Y(trace[i][1]));
+      ctx.stroke(); ctx.lineCap = "butt";
+    }
+
+    // Bâti
+    ctx.strokeStyle = COL.ground; ctx.lineWidth = 1.5; ctx.setLineDash([10, 4, 2, 4]);
+    ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(P.d), Y(0)); ctx.stroke(); ctx.setLineDash([]);
+    text(X(P.d / 2), Y(0) + 14, "L0", COL.ground, "bold 12px " + FONT);
+
+    if ($("showExt").checked && ext && ext.rocker && !ext.rocker.full) drawExtremes(ext.rocker, X, Y, sc);
+
+    // Points morts de la manivelle (positions limites de θ₁)
+    if (crankBlocked()) {
+      const c = ext.crank;
+      for (const t of [c.start.ang, c.start.ang + c.range]) {
+        const ax = P.a * Math.cos(t), ay = P.a * Math.sin(t);
+        ctx.strokeStyle = "#cc092f"; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]);
+        ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(ax), Y(ay)); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = "#cc092f"; ctx.beginPath(); ctx.arc(X(ax), Y(ay), 3.5, 0, TWO); ctx.fill();
+        const k = 1 + 22 / Math.max(1, P.a * sc);
+        text(X(ax * k), Y(ay * k), "point mort", "#cc092f", "11px " + FONT);
+      }
+    }
+
+    support(X(0), Y(0)); support(X(P.d), Y(0));
+    if (!s) { pin(X(0), Y(0)); pin(X(P.d), Y(0)); text(X(0) - 14, Y(0) - 14, "O", COL.ink, "bold 15px " + FONT); text(X(P.d) + 14, Y(0) - 14, "C", COL.ink, "bold 15px " + FONT); return; }
+
+    // Angle θ₁
+    const rT = Math.max(18, Math.min(30, P.a * sc * 0.45)), t1 = norm(th) / DEG;
+    ctx.strokeStyle = COL.crank; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(X(0), Y(0), rT, 0, -t1, true); ctx.stroke();
+    text(X(0) + (rT + 10) * Math.cos(-t1 / 2), Y(0) + (rT + 10) * Math.sin(-t1 / 2), "θ₁", COL.crank, "italic 13px " + FONT);
+
+    // Angle μ en B
+    {
+      const aBA = Math.atan2(s.Ay - s.By, s.Ax - s.Bx), aBC = Math.atan2(-s.By, P.d - s.Bx);
+      let d = aBC - aBA; while (d > Math.PI) d -= TWO; while (d < -Math.PI) d += TWO;
+      const rM = Math.max(14, Math.min(24, Math.min(P.b, P.c) * sc * 0.25));
+      ctx.strokeStyle = "#555"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(X(s.Bx), Y(s.By), rM, -aBA, -(aBA + d), d > 0); ctx.stroke();
+      const am = aBA + d / 2;
+      text(X(s.Bx) + (rM + 9) * Math.cos(-am), Y(s.By) + (rM + 9) * Math.sin(-am), "μ", "#555", "italic 13px " + FONT);
+    }
+
+    // Barres (en rouge si la configuration n'est pas fonctionnelle)
+    const bad = crankBlocked();
+    const cC = bad ? "#cc092f" : COL.crank, cB = bad ? "#e0566a" : COL.coupler, cR = bad ? "#9e0f26" : COL.rocker;
+    bar(0, 0, s.Ax, s.Ay, cC, X, Y);
+    bar(P.d, 0, s.Bx, s.By, cR, X, Y);
+    bar(s.Ax, s.Ay, s.Bx, s.By, cB, X, Y);
+    barLabel(0, 0, s.Ax, s.Ay, "L1", cC, X, Y);
+    barLabel(s.Ax, s.Ay, s.Bx, s.By, "L2", cB, X, Y);
+    barLabel(P.d, 0, s.Bx, s.By, "L3", cR, X, Y);
+
+    // Articulations
+    pin(X(0), Y(0)); pin(X(P.d), Y(0)); pin(X(s.Ax), Y(s.Ay)); pin(X(s.Bx), Y(s.By));
+    pointName(X(0), Y(0), "O", -1, -1);
+    pointName(X(P.d), Y(0), "C", 1, -1);
+    pointName(X(s.Ax), Y(s.Ay), "A", s.Ax < P.d / 2 ? -1 : 1, s.Ay >= 0 ? -1 : 1);
+    pointName(X(s.Bx), Y(s.By), "B", s.Bx > P.d / 2 ? 1 : -1, s.By >= 0 ? -1 : 1);
+  }
+
+  function drawExtremes(r, X, Y, sc) {
+    ctx.setLineDash([5, 4]); ctx.lineWidth = 1.2; ctx.lineCap = "butt";
+    for (const e of [r.start, r.end]) {
+      const q = e.s;
+      ctx.strokeStyle = "#8a9cc0"; ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(q.Ax), Y(q.Ay)); ctx.stroke();
+      ctx.strokeStyle = "#d9a27a"; ctx.beginPath(); ctx.moveTo(X(q.Ax), Y(q.Ay)); ctx.lineTo(X(q.Bx), Y(q.By)); ctx.stroke();
+      ctx.strokeStyle = COL.rocker; ctx.beginPath(); ctx.moveTo(X(P.d), Y(0)); ctx.lineTo(X(q.Bx), Y(q.By)); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    for (const e of [r.start, r.end]) {
+      ctx.fillStyle = "#fff"; ctx.strokeStyle = COL.rocker; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(X(e.s.Bx), Y(e.s.By), 3, 0, TWO); ctx.fill(); ctx.stroke();
+    }
+    text(X(r.start.s.Bx) + 12, Y(r.start.s.By) - 10, "B₁", COL.rocker, "12px " + FONT);
+    text(X(r.end.s.Bx) + 12, Y(r.end.s.By) - 10, "B₂", COL.rocker, "12px " + FONT);
+
+    // Cote angulaire φ en C
+    const R = Math.max(30, Math.min(P.c * sc * 0.6, 75));
+    const a0 = -r.start.ang, a1 = -(r.start.ang + r.range);
+    ctx.strokeStyle = COL.rocker; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(X(P.d), Y(0), R, a0, a1, true); ctx.stroke();
+    for (const [a, sgn] of [[a0, 1], [a1, -1]]) {
+      const px = X(P.d) + R * Math.cos(a), py = Y(0) + R * Math.sin(a);
+      const tx = -Math.sin(a) * sgn, ty = Math.cos(a) * sgn;
+      ctx.fillStyle = COL.rocker; ctx.beginPath(); ctx.moveTo(px, py);
+      ctx.lineTo(px - tx * 8 + ty * 3, py - ty * 8 - tx * 3);
+      ctx.lineTo(px - tx * 8 - ty * 3, py - ty * 8 + tx * 3);
+      ctx.closePath(); ctx.fill();
+    }
+    const mid = r.start.ang + r.range / 2, Rl = Math.max(R + 28, P.c * sc + 26);
+    const lx = X(P.d) + Rl * Math.cos(-mid), ly = Y(0) + Rl * Math.sin(-mid);
+    const lab = "φ = " + (r.range * DEG).toFixed(1) + "°";
+    ctx.font = "bold 13px " + FONT;
+    const tw = ctx.measureText(lab).width;
+    ctx.fillStyle = "#fff"; ctx.fillRect(lx - tw / 2 - 4, ly - 9, tw + 8, 18);
+    text(lx, ly, lab, COL.rocker, "bold 13px " + FONT);
+  }
+
+  function bar(x1, y1, x2, y2, col, X, Y) {
+    ctx.lineCap = "round"; ctx.strokeStyle = col; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(X(x1), Y(y1)); ctx.lineTo(X(x2), Y(y2)); ctx.stroke();
+    ctx.lineCap = "butt";
+  }
+  function barLabel(x1, y1, x2, y2, s, col, X, Y) {
+    const mx = (X(x1) + X(x2)) / 2, my = (Y(y1) + Y(y2)) / 2;
+    let nx = -(Y(y2) - Y(y1)), ny = X(x2) - X(x1); const L = Math.hypot(nx, ny) || 1;
+    nx /= L; ny /= L; if (ny > 0) { nx = -nx; ny = -ny; }
+    text(mx + nx * 15, my + ny * 15, s, col, "bold 12px " + FONT);
+  }
+  function pin(x, y) {
+    ctx.fillStyle = "#fff"; ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(x, y, 5.5, 0, TWO); ctx.fill(); ctx.stroke();
+  }
+  function pointName(x, y, s, sx, sy) { text(x + sx * 14, y + sy * 14, s, COL.ink, "bold 15px " + FONT); }
+  function support(x, y) {
+    ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.2; ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 12, y + 18); ctx.lineTo(x + 12, y + 18); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 20, y + 18); ctx.lineTo(x + 20, y + 18); ctx.stroke();
+    ctx.lineWidth = 1;
+    for (let i = -20; i <= 14; i += 6) { ctx.beginPath(); ctx.moveTo(x + i, y + 25); ctx.lineTo(x + i + 6, y + 18); ctx.stroke(); }
+  }
+  function arrow(x1, y1, x2, y2, col) {
+    ctx.strokeStyle = col; ctx.fillStyle = col;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    const a = Math.atan2(y2 - y1, x2 - x1);
+    ctx.beginPath(); ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 7 * Math.cos(a - .4), y2 - 7 * Math.sin(a - .4));
+    ctx.lineTo(x2 - 7 * Math.cos(a + .4), y2 - 7 * Math.sin(a + .4));
+    ctx.closePath(); ctx.fill();
+  }
+
+  // ---------- Résultats ----------
+  function readout(s) {
+    const f = (v, n = 1) => isFinite(v) ? v.toFixed(n) : "—";
+    const ids = ["o_t1","o_t2","o_t3","o_mu","o_w2","o_w3","o_ratio"];
+    if (!s) { ids.forEach(id => $(id).textContent = "—"); return; }
+    const w1 = dir * P.w, mu = s.mu * DEG, bad = mu < 40 || mu > 140;
+    $("o_t1").textContent = f(norm(th)) + "°" + (crankBlocked() ? " (limité)" : "");
+    $("o_t1").className = "v" + (crankBlocked() ? " warn" : "");
+    $("o_t2").textContent = f(norm(s.t2)) + "°";
+    $("o_t3").textContent = f(norm(s.t3)) + "°";
+    $("o_mu").textContent = f(mu) + "°" + (bad ? " (faible)" : "");
+    $("o_mu").className = "v" + (bad ? " warn" : "");
+    $("o_w2").textContent = f(s.w2 * w1, 3) + " rad/s";
+    $("o_w3").textContent = f(s.w3 * w1, 3) + " rad/s";
+    $("o_ratio").textContent = f(s.w3, 3);
+    $("o_br").textContent = branch === 1 ? "1" : "2";
+  }
+
+  // ---------- Boucle ----------
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (playing && solve(th, branch)) step(dt);
+    const s = solve(th, branch);
+    if (s) {
+      const lastP = trace[trace.length - 1];
+      if (!lastP || Math.hypot(s.Bx - lastP[0], s.By - lastP[1]) > 0.05) trace.push([s.Bx, s.By]);
+      if (trace.length > 20000) trace.shift();
+    }
+    draw(s); readout(s);
+    if (playing) syncTheta();
+    requestAnimationFrame(loop);
+  }
+
+  renderLocks(); recompute(); syncTheta();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

@@ -73,6 +73,8 @@ body.widget .topbar,body.widget .tabs{display:none}
 .item .f{display:flex;align-items:center;gap:4px}
 .u{font-size:11px;color:var(--muted);width:44px}
 .item input[type=range]{grid-column:1/-1;width:100%;margin:0;accent-color:var(--blue2);height:18px}
+.mnote{grid-column:1/-1;font-size:11px;color:var(--muted);line-height:1.35}
+.mnote.warn{color:var(--warn)}
 .chips{display:flex;gap:4px;flex-wrap:wrap}
 .chk{display:flex;align-items:center;gap:7px;cursor:pointer}
 .chk input{accent-color:var(--blue2);margin:0}
@@ -168,7 +170,7 @@ td.v{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
       <div class="node"><span class="pas" style="background:#005386">G</span>Géométrie et masse</div>
       <div class="kids">
         <div class="item"><label for="Rn">Rayon R</label><span class="f"><input id="Rn" type="number" step="1"><span class="u">mm</span></span><input id="R" type="range" min="20" max="1000" step="1" value="50" aria-label="Rayon"></div>
-        <div class="item"><label for="mn">Masse m</label><span class="f"><input id="mn" type="number" step="0.1"><span class="u">kg</span></span><input id="m" type="range" min="0.1" max="20" step="0.1" value="2" aria-label="Masse"></div>
+        <div class="item"><label for="mn">Masse m</label><span class="f"><input id="mn" type="number" step="0.1"><span class="u">kg</span></span><input id="m" type="range" min="0.1" max="20" step="0.1" value="2" aria-label="Masse"><span class="mnote" id="mNote"></span></div>
       </div>
       <div class="node"><span class="pas" style="background:#368ec4">C</span>Conditions</div>
       <div class="kids">
@@ -334,7 +336,10 @@ function drawPlot(){
   hist.forEach(([tt,a],i)=>{const px=Xt(tt),py=Y(a*180/Math.PI);i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();
 }
 
-function updRes(){
+function massNote(){const n=$('mNote');
+  if(P.c===0){n.className='mnote';n.textContent='Sans effet sur le mouvement tant que c = 0 : m se simplifie dans l\'équation.'}
+  else{n.className='mnote warn';n.textContent='Influe sur le mouvement car c ≠ 0 : l\'amortissement agit selon le rapport c/m.'}}
+function updRes(){massNote();
   const w=W0();
   $('rD').textContent=fmt(d()*1000,2)+' mm';
   $('rIO').textContent=fmt(P.m*P.R*P.R/2,5)+' kg·m²';
@@ -384,7 +389,13 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==
   if(e.code==='Space'){e.preventDefault();toggle()}else if(e.key==='r'||e.key==='R')$('bReset').click();else if(e.key==='ArrowRight')$('bStep').click()});
 
 /* ---------- lien de partage : #r50-m2-t10-g9p81-c0-v1-o111 ---------- */
-const BASE='https://claude.ai/artifact/3vWpEZ2Y2WqNrWvM86ZYVN';
+const CLAUDE='https://claude.ai/artifact/3vWpEZ2Y2WqNrWvM86ZYVN';
+function base(){
+  const own=location.href.split('#')[0];
+  const framed=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+  // Dans l'aperçu claude.ai, la page tourne sur un domaine technique : on renvoie vers le lien claude.ai.
+  if(framed&&/claude|anthropic/i.test(location.hostname+' '+document.referrer))return CLAUDE;
+  return /^https?:/.test(own)?own:CLAUDE}
 const enc=v=>String(+(+v).toFixed(4)).replace('.','p');
 function code(widget){
   const o=['oTr','oVec','oAng'].map(id=>$(id).checked?1:0).join('');
@@ -408,13 +419,15 @@ function loadHash(){
   return true}
 addEventListener('hashchange',()=>{if(location.hash===selfHash)return;if(loadHash()){updRes();reset()}});
 
-function fillShare(){$('shLink').value=BASE+'#'+code($('shW').checked);$('shMsg').textContent=''}
+function fillShare(){$('shLink').value=base()+'#'+code($('shW').checked);$('shMsg').textContent=''}
 $('bShare').onclick=()=>{fillShare();$('share').classList.add('open');$('shLink').select()};
 $('shClose').onclick=()=>$('share').classList.remove('open');
 $('shW').onchange=fillShare;
-$('shCopy').onclick=async()=>{const m=$('shMsg');
-  try{await navigator.clipboard.writeText($('shLink').value);m.className='msg ok';m.textContent='✓ Lien copié'}
-  catch(e){$('shLink').select();m.className='msg err';m.textContent='✗ Copie refusée : sélectionnez le lien et copiez-le (Ctrl+C)'}};
+$('shCopy').onclick=async()=>{const m=$('shMsg'),inp=$('shLink');let ok=false;
+  try{await navigator.clipboard.writeText(inp.value);ok=true}catch(e){}
+  if(!ok){try{inp.focus();inp.select();ok=document.execCommand('copy')}catch(e){}}
+  if(ok){m.className='msg ok';m.textContent='✓ Lien copié'}
+  else{inp.focus();inp.select();m.className='msg err';m.textContent='✗ Copie bloquée par le navigateur : le lien est sélectionné, faites Ctrl+C'}};
 addEventListener('keydown',e=>{if(e.key==='Escape')$('share').classList.remove('open')});
 
 loadHash();updRes();
